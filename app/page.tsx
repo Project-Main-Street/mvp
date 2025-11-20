@@ -1,13 +1,10 @@
-import Link from "next/link";
+import { Container } from "@radix-ui/themes";
+
 
 export default function Home() {
   return (
     <main>
-      <ul>
-        <Link href="/sign-in">Sign In</Link>
-        <Link href="/sign-up">Sign Up</Link>
-        <Link href="/dashboard">Dashboard</Link>
-      </ul>
+      <Container size="1">HERO</Container>
     </main>
-  )
+  );
 }
