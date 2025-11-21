@@ -4,8 +4,8 @@ export default function BusinessesList({ businesses }: { businesses: any[] }) {
     return (
         <DataList.Root>
             {businesses.map(business => (
-                <DataList.Item>
-                    <DataList.Value><Link key={business.id} href={`/business/${business.id}`}>{business.name}
+                <DataList.Item key={business.id}>
+                    <DataList.Value><Link href={`/business/${business.id}`}>{business.name}
                     </Link></DataList.Value>
                 </DataList.Item>
 
