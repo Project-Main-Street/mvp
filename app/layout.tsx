@@ -6,7 +6,6 @@ import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { Inter } from 'next/font/google'
 import { Theme } from "@radix-ui/themes";
-import NavBar from "@/lib/components/NavBar";
 
 
 export const metadata = {
@@ -30,12 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.variable}>
-        <StackProvider app={stackClientApp}><StackTheme>
-          <Theme>
-            <NavBar />
-            {children}
-          </Theme>
-        </StackTheme></StackProvider>
+        <StackProvider app={stackClientApp}>
+          <StackTheme>
+            <Theme>
+              {children}
+            </Theme>
+          </StackTheme>
+        </StackProvider>
       </body>
     </html>
   )

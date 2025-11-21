@@ -1,39 +1,55 @@
-import Link from "next/link";
+'use client';
+
 import { NavigationMenu } from "radix-ui";
-import "./styles.css";
+import { Link, Strong } from "@radix-ui/themes";
+import "./styles.scss";
+import { UserButton, useUser } from "@stackframe/stack";
 
 export default function NavBar() {
+    const user = useUser();
     return (
-        <NavigationMenu.Root className="NavigationMenu">
-            <NavigationMenu.List className="NavigationMenuList">
-                <NavigationMenu.Item className="NavigationMenuItem">
-                    <NavigationMenu.Link asChild className="NavigationMenuLink">
-                        <Link href="/">Project Main Street</Link>
+        <NavigationMenu.Root className="NavigationMenu-Root">
+            <NavigationMenu.List className="NavigationMenu-List">
+                <NavigationMenu.Item>
+                    <NavigationMenu.Link asChild>
+                        <Link href="/">
+                            <Strong>Main Street</Strong>
+                        </Link>
                     </NavigationMenu.Link>
                 </NavigationMenu.Item>
 
-                <NavigationMenu.Item className="NavigationMenuItem">
-                    <NavigationMenu.Link asChild className="NavigationMenuLink">
-                        <Link href="/sign-in">Sign In</Link>
-                    </NavigationMenu.Link>
-                </NavigationMenu.Item>
-
-                <NavigationMenu.Item className="NavigationMenuItem">
-                    <NavigationMenu.Link asChild className="NavigationMenuLink">
-                        <Link href="/sign-up">Sign Up</Link>
-                    </NavigationMenu.Link>
-                </NavigationMenu.Item>
-
-                <NavigationMenu.Item className="NavigationMenuItem">
-                    <NavigationMenu.Link asChild className="NavigationMenuLink">
+                <NavigationMenu.Item>
+                    <NavigationMenu.Link asChild>
                         <Link href="/dashboard">Dashboard</Link>
                     </NavigationMenu.Link>
                 </NavigationMenu.Item>
 
-                <NavigationMenu.Indicator className="NavigationMenuIndicator" />
+                <NavigationMenu.Item>
+                    <NavigationMenu.Link asChild>
+                        <Link href="/sign-in">
+                            Sign In
+                        </Link>
+                    </NavigationMenu.Link>
+                </NavigationMenu.Item>
+
+                <NavigationMenu.Item>
+                    <NavigationMenu.Link asChild>
+                        <Link href="/sign-up">
+                            Sign Up
+                        </Link>
+                    </NavigationMenu.Link>
+                </NavigationMenu.Item>
+
+                {user ? (
+                    <NavigationMenu.Item>
+                        <UserButton />
+                    </NavigationMenu.Item>
+                ) : null}
+
+                <NavigationMenu.Indicator />
             </NavigationMenu.List>
 
-            <NavigationMenu.Viewport className="NavigationMenuViewport" />
+            <NavigationMenu.Viewport />
         </NavigationMenu.Root>
     )
 }

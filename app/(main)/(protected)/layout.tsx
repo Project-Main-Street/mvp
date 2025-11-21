@@ -1,6 +1,5 @@
 // app/(protected)/layout.tsx
 import { stackServerApp } from "@/stack/server";
-import { UserButton } from "@stackframe/stack";
 import type { ReactNode } from "react";
 
 interface ProtectedLayoutProps {
@@ -12,7 +11,6 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
 
     return (
         <>
-            <UserButton />
             {children}
         </>
     );

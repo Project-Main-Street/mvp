@@ -1,0 +1,15 @@
+.NavigationMenu-Root {
+}
+
+.NavigationMenu-List {
+  display: flex;
+  li {
+    list-style: none;
+  }
+  gap: 16px;
+
+  // last child is far right:
+  li:last-child {
+    margin-left: auto;
+  }
+}
