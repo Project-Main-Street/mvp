@@ -18,33 +18,29 @@ export default function NavBar() {
                     </NavigationMenu.Link>
                 </NavigationMenu.Item>
 
-                <NavigationMenu.Item>
-                    <NavigationMenu.Link asChild>
-                        <Link href="/dashboard">Dashboard</Link>
-                    </NavigationMenu.Link>
-                </NavigationMenu.Item>
-
-                <NavigationMenu.Item>
-                    <NavigationMenu.Link asChild>
-                        <Link href="/sign-in">
-                            Sign In
-                        </Link>
-                    </NavigationMenu.Link>
-                </NavigationMenu.Item>
-
-                <NavigationMenu.Item>
-                    <NavigationMenu.Link asChild>
-                        <Link href="/sign-up">
-                            Sign Up
-                        </Link>
-                    </NavigationMenu.Link>
-                </NavigationMenu.Item>
-
                 {user ? (
-                    <NavigationMenu.Item>
+                    <NavigationMenu.Item className="right">
                         <UserButton />
                     </NavigationMenu.Item>
-                ) : null}
+                ) : (
+                    <div className="right group">
+                        <NavigationMenu.Item>
+                            <NavigationMenu.Link asChild>
+                                <Link href="/sign-in">
+                                    Sign In
+                                </Link>
+                            </NavigationMenu.Link>
+                        </NavigationMenu.Item>
+
+                        <NavigationMenu.Item>
+                            <NavigationMenu.Link asChild>
+                                <Link href="/sign-up">
+                                    Sign Up
+                                </Link>
+                            </NavigationMenu.Link>
+                        </NavigationMenu.Item>
+                    </div>
+                )}
 
                 <NavigationMenu.Indicator />
             </NavigationMenu.List>

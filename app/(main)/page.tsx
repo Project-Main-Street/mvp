@@ -1,7 +1,16 @@
 import { Container, Heading, Section } from "@radix-ui/themes";
 
+import { stackServerApp } from "@/stack/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+
+export default async function Home() {
+  const user = await stackServerApp.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main>
       <Section>

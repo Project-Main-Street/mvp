@@ -1,15 +1,16 @@
-.NavigationMenu-Root {
-}
-
 .NavigationMenu-List {
   display: flex;
+  padding: 1rem 2rem;;
   li {
     list-style: none;
   }
-  gap: 16px;
-
-  // last child is far right:
-  li:last-child {
+  gap: 2rem;
+  // sign-in and sign-up links to the right:
+  .right {
     margin-left: auto;
+  }
+  .group {
+    display: flex;
+    gap: 2rem;
   }
 }
