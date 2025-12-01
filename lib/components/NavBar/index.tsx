@@ -4,6 +4,7 @@ import { NavigationMenu } from "radix-ui";
 import { Link, Strong } from "@radix-ui/themes";
 import "./styles.scss";
 import { UserButton, useUser } from "@stackframe/stack";
+import CreatePostButton from "../CreatePostButton";
 
 export default function NavBar() {
     const user = useUser();
@@ -19,9 +20,14 @@ export default function NavBar() {
                 </NavigationMenu.Item>
 
                 {user ? (
-                    <NavigationMenu.Item className="right">
-                        <UserButton />
-                    </NavigationMenu.Item>
+                    <div className="right group">
+                        <NavigationMenu.Item>
+                            <CreatePostButton />
+                        </NavigationMenu.Item>
+                        <NavigationMenu.Item>
+                            <UserButton />
+                        </NavigationMenu.Item>
+                    </div>
                 ) : (
                     <div className="right group">
                         <NavigationMenu.Item>
