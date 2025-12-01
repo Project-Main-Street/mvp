@@ -8,6 +8,7 @@ interface Post {
     id: number;
     title: string;
     content: string;
+    authorName: string;
 }
 
 interface PostsListProps {
@@ -23,6 +24,7 @@ export default function PostsList({ posts }: PostsListProps) {
                     id={post.id}
                     title={post.title}
                     content={post.content}
+                    authorName={post.authorName}
                 />
             ))}
         </Flex>

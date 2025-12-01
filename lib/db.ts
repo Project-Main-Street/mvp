@@ -5,6 +5,7 @@ const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
 interface Post {
   id: number;
   author: string;
+  authorName: string;
   title: string;
   content: string;
   createdAt: Date;
@@ -13,9 +14,17 @@ interface Post {
 
 export async function getPosts(): Promise<Post[]> {
   const posts = await sql`
-    SELECT id, author, title, content, "createdAt", "updatedAt"
-    FROM posts
-    ORDER BY "createdAt" DESC
+    SELECT 
+      p.id, 
+      p.author, 
+      u.name as "authorName",
+      p.title, 
+      p.content, 
+      p."createdAt", 
+      p."updatedAt"
+    FROM posts p
+    LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    ORDER BY p."createdAt" DESC
   `;
   return posts as unknown as Post[];
 }
