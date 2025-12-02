@@ -1,4 +1,4 @@
-import { createPost } from "@/lib/db";
+import { createComment } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack/server";
 
@@ -18,28 +18,28 @@ export async function POST(request: NextRequest) {
 
         // Parse form data
         const formData = await request.formData();
-        const title = formData.get("title") as string;
         const content = formData.get("content") as string;
+        const postId = formData.get("postId") as string;
 
         // Validate input
-        if (!title || !content) {
+        if (!content || !postId) {
             return NextResponse.json(
-                { error: "Title and content are required" },
+                { error: "Content and post ID are required" },
                 { status: 400 }
             );
         }
 
-        // Create post
-        const post = await createPost(userId, title, content);
+        // Create comment
+        const comment = await createComment(userId, parseInt(postId), content);
 
         return NextResponse.json(
-            { success: true, post },
+            { success: true, comment },
             { status: 201 }
         );
     } catch (error) {
-        console.error("Error creating post:", error);
+        console.error("Error creating comment:", error);
         return NextResponse.json(
-            { error: "Failed to create post" },
+            { error: "Failed to create comment" },
             { status: 500 }
         );
     }

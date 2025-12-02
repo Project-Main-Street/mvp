@@ -1,7 +1,9 @@
 import { getPostById } from "@/lib/db";
 import PostDetail from "@/lib/components/PostDetail";
+import CreateCommentForm from "@/lib/components/CreateCommentForm";
+import CommentsList from "@/lib/components/CommentsList";
 import { notFound } from "next/navigation";
-import { Section } from "@radix-ui/themes";
+import { Section, Box, Heading } from "@radix-ui/themes";
 
 interface PostPageProps {
     params: Promise<{
@@ -17,6 +19,8 @@ export default async function PostPage({ params }: PostPageProps) {
         notFound();
     }
 
+    const comments = post.comments || [];
+
     return (
         <Section>
             <PostDetail
@@ -25,6 +29,18 @@ export default async function PostPage({ params }: PostPageProps) {
                 content={post.content}
                 authorName={post.authorName}
             />
+
+            <Box mt="6" maxWidth="576px">
+                <Heading as="h2" size="5" mb="4">
+                    Comments
+                </Heading>
+
+                <Box mb="4">
+                    <CreateCommentForm postId={post.id} />
+                </Box>
+
+                <CommentsList comments={comments} />
+            </Box>
         </Section>
     );
 }
