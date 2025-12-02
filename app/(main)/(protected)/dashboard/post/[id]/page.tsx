@@ -4,6 +4,7 @@ import CreateCommentForm from "@/lib/components/CreateCommentForm";
 import CommentsList from "@/lib/components/CommentsList";
 import { notFound } from "next/navigation";
 import { Section, Box, Heading } from "@radix-ui/themes";
+import { stackServerApp } from "@/stack/server";
 
 interface PostPageProps {
     params: Promise<{
@@ -13,7 +14,8 @@ interface PostPageProps {
 
 export default async function PostPage({ params }: PostPageProps) {
     const { id } = await params;
-    const post = await getPostById(id);
+    const user = await stackServerApp.getUser();
+    const post = await getPostById(id, user?.id);
 
     if (!post) {
         notFound();
@@ -28,6 +30,11 @@ export default async function PostPage({ params }: PostPageProps) {
                 title={post.title}
                 content={post.content}
                 authorName={post.authorName}
+                totalVotes={post.totalVotes}
+                voteScore={post.voteScore}
+                upvotes={post.upvotes}
+                downvotes={post.downvotes}
+                userVote={post.userVote}
             />
 
             <Box mt="6" maxWidth="576px">
