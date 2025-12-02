@@ -5,9 +5,11 @@ interface PostPreviewCardProps {
     title: string;
     content: string;
     authorName: string;
+    voteScore?: number;
+    commentCount?: number;
 }
 
-export default function PostPreviewCard({ id, title, content, authorName }: PostPreviewCardProps) {
+export default function PostPreviewCard({ id, title, content, authorName, voteScore = 0, commentCount = 0 }: PostPreviewCardProps) {
     const truncatedContent = content.length > 180
         ? content.substring(0, 180) + "..."
         : content;
@@ -15,7 +17,7 @@ export default function PostPreviewCard({ id, title, content, authorName }: Post
     return (
         <Card>
             <Text as="p" size="1" color="gray" mb="1">
-                {authorName}
+                {voteScore} {voteScore === 1 ? 'point' : 'points'} | {authorName} | {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
             </Text>
             <Heading as="h3" size="4" mb="2">
                 <Link href={`/dashboard/post/${id}`} color="blue">

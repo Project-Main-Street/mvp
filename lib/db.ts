@@ -16,6 +16,7 @@ interface Post {
   upvotes?: number;
   downvotes?: number;
   userVote?: -1 | 0 | 1;
+  commentCount?: number;
 }
 
 interface Comment {
@@ -25,6 +26,8 @@ interface Comment {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  voteScore?: number;
+  userVote?: -1 | 0 | 1;
 }
 
 export async function getPosts(): Promise<Post[]> {
@@ -36,7 +39,9 @@ export async function getPosts(): Promise<Post[]> {
       p.title, 
       p.content, 
       p."createdAt", 
-      p."updatedAt"
+      p."updatedAt",
+      COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+      COALESCE((SELECT COUNT(*) FROM comments WHERE post = p.id), 0)::int as "commentCount"
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
     ORDER BY p."createdAt" DESC
@@ -94,17 +99,26 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
       u.name as "authorName",
       c.content,
       c."createdAt",
-      c."updatedAt"
+      c."updatedAt",
+      COALESCE((SELECT SUM(valence) FROM votes WHERE comment = c.id), 0)::int as "voteScore"
     FROM comments c
     LEFT JOIN neon_auth.users_sync u ON c.author = u.id
     WHERE c.post = ${id}
     ORDER BY c."createdAt" ASC
   `;
   
+  // Add user votes for each comment if userId is provided
+  const commentsWithUserVotes = userId ? await Promise.all(
+    comments.map(async (comment: any) => ({
+      ...comment,
+      userVote: await getUserVoteOnComment(userId, comment.id)
+    }))
+  ) : comments;
+  
   return {
     ...post[0],
     userVote,
-    comments: comments as unknown as Comment[]
+    comments: commentsWithUserVotes as unknown as Comment[]
   } as Post;
 }
 

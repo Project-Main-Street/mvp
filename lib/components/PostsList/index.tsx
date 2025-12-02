@@ -9,6 +9,8 @@ interface Post {
     title: string;
     content: string;
     authorName: string;
+    voteScore?: number;
+    commentCount?: number;
 }
 
 interface PostsListProps {
@@ -25,6 +27,8 @@ export default function PostsList({ posts }: PostsListProps) {
                     title={post.title}
                     content={post.content}
                     authorName={post.authorName}
+                    voteScore={post.voteScore}
+                    commentCount={post.commentCount}
                 />
             ))}
         </Flex>
