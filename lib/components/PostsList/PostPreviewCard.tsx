@@ -18,7 +18,7 @@ export default function PostPreviewCard({ id, title, content, authorName }: Post
                 {authorName}
             </Text>
             <Heading as="h3" size="4" mb="2">
-                <Link href="#" color="blue">
+                <Link href={`/dashboard/post/${id}`} color="blue">
                     {title}
                 </Link>
             </Heading>

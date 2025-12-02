@@ -41,9 +41,17 @@ export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
 
 export async function getPostById(id: string): Promise<Post | undefined> {
   const post = await sql`
-    SELECT id, author, title, content, "createdAt", "updatedAt"
-    FROM posts
-    WHERE id = ${id}
+    SELECT 
+      p.id, 
+      p.author, 
+      u.name as "authorName",
+      p.title, 
+      p.content, 
+      p."createdAt", 
+      p."updatedAt"
+    FROM posts p
+    LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    WHERE p.id = ${id}
     LIMIT 1
   `;
   return post[0] as Post | undefined;
