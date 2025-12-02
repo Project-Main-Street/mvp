@@ -21,7 +21,7 @@ export default async function PostPage({ params }: PostPageProps) {
         notFound();
     }
 
-    const comments = post.comments || [];
+    const replies = post.replies || [];
 
     return (
         <Section>
@@ -43,10 +43,10 @@ export default async function PostPage({ params }: PostPageProps) {
                 </Heading>
 
                 <Box mb="4">
-                    <CreateCommentForm postId={post.id} />
+                    <CreateCommentForm parentId={post.id} />
                 </Box>
 
-                <CommentsList comments={comments} />
+                <CommentsList comments={replies} />
             </Box>
         </Section>
     );

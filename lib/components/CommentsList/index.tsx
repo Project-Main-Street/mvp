@@ -6,6 +6,10 @@ interface Comment {
     content: string;
     authorName: string;
     createdAt: Date;
+    voteScore?: number;
+    userVote?: -1 | 0 | 1;
+    replies?: Comment[];
+    depth?: number;
 }
 
 interface CommentsListProps {
@@ -22,7 +26,7 @@ export default function CommentsList({ comments }: CommentsListProps) {
     }
 
     return (
-        <Flex direction="column" gap="3">
+        <Flex direction="column" gap="4">
             {comments.map((comment) => (
                 <CommentCard key={comment.id} comment={comment} />
             ))}

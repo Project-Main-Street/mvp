@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface VoteButtonProps {
-    type: 'post' | 'comment';
     targetId: number;
     totalVotes?: number;
     voteScore?: number;
@@ -46,7 +45,6 @@ export function VoteDownButton({ onClick, isActive, disabled }: { onClick: () =>
 }
 
 export default function VoteButton({
-    type,
     targetId,
     totalVotes = 0,
     voteScore = 0,
@@ -61,16 +59,12 @@ export default function VoteButton({
         setIsLoading(true);
 
         try {
-            const body = type === 'post'
-                ? { valence, postId: targetId }
-                : { valence, commentId: targetId };
-
             const response = await fetch('/api/vote', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ valence, postId: targetId }),
             });
 
             if (!response.ok) {

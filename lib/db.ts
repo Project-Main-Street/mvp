@@ -10,24 +10,15 @@ interface Post {
   content: string;
   createdAt: Date;
   updatedAt: Date;
-  comments?: Comment[];
+  parent?: number;
+  replies?: Post[];
   totalVotes?: number;
   voteScore?: number;
   upvotes?: number;
   downvotes?: number;
   userVote?: -1 | 0 | 1;
   commentCount?: number;
-}
-
-interface Comment {
-  id: number;
-  author: string;
-  authorName: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-  voteScore?: number;
-  userVote?: -1 | 0 | 1;
+  depth?: number;
 }
 
 export async function getPosts(): Promise<Post[]> {
@@ -41,9 +32,10 @@ export async function getPosts(): Promise<Post[]> {
       p."createdAt", 
       p."updatedAt",
       COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
-      COALESCE((SELECT COUNT(*) FROM comments WHERE post = p.id), 0)::int as "commentCount"
+      COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    WHERE p.parent IS NULL
     ORDER BY p."createdAt" DESC
   `;
   return posts as unknown as Post[];
@@ -91,106 +83,122 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
     userVote = await getUserVoteOnPost(userId, parseInt(id));
   }
   
-  // Fetch comments for this post
-  const comments = await sql`
-    SELECT 
-      c.id,
-      c.author,
-      u.name as "authorName",
-      c.content,
-      c."createdAt",
-      c."updatedAt",
-      COALESCE((SELECT SUM(valence) FROM votes WHERE comment = c.id), 0)::int as "voteScore"
-    FROM comments c
-    LEFT JOIN neon_auth.users_sync u ON c.author = u.id
-    WHERE c.post = ${id}
-    ORDER BY c."createdAt" ASC
+  // Fetch entire thread tree using recursive CTE
+  const thread = await sql`
+    WITH RECURSIVE thread_tree AS (
+      -- Base case: direct replies to the post
+      SELECT 
+        p.id,
+        p.author,
+        u.name as "authorName",
+        p.title,
+        p.content,
+        p.parent,
+        p."createdAt",
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        1 as depth
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      WHERE p.parent = ${id}
+      
+      UNION ALL
+      
+      -- Recursive case: replies to replies
+      SELECT 
+        p.id,
+        p.author,
+        u.name as "authorName",
+        p.title,
+        p.content,
+        p.parent,
+        p."createdAt",
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        tt.depth + 1
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      INNER JOIN thread_tree tt ON p.parent = tt.id
+    )
+    SELECT * FROM thread_tree
+    ORDER BY "createdAt" ASC
   `;
   
-  // Add user votes for each comment if userId is provided
-  const commentsWithUserVotes = userId ? await Promise.all(
-    comments.map(async (comment: any) => ({
-      ...comment,
-      userVote: await getUserVoteOnComment(userId, comment.id)
+  // Add user votes for each reply if userId is provided
+  const repliesWithUserVotes = userId ? await Promise.all(
+    thread.map(async (reply: any) => ({
+      ...reply,
+      userVote: await getUserVoteOnPost(userId, reply.id)
     }))
-  ) : comments;
+  ) : thread;
+  
+  // Build tree structure from flat list
+  const repliesMap = new Map<number, Post>();
+  const rootReplies: Post[] = [];
+  
+  // First pass: create all reply objects
+  for (const reply of repliesWithUserVotes) {
+    repliesMap.set(reply.id, { ...reply, replies: [] } as Post);
+  }
+  
+  // Second pass: build the tree
+  for (const reply of repliesWithUserVotes) {
+    const replyNode = repliesMap.get(reply.id)!;
+    if (reply.parent === parseInt(id)) {
+      // Direct child of the post
+      rootReplies.push(replyNode);
+    } else {
+      // Child of another reply
+      const parentNode = repliesMap.get(reply.parent);
+      if (parentNode) {
+        parentNode.replies = parentNode.replies || [];
+        parentNode.replies.push(replyNode);
+      }
+    }
+  }
   
   return {
     ...post[0],
     userVote,
-    comments: commentsWithUserVotes as unknown as Comment[]
+    replies: rootReplies
   } as Post;
 }
 
-export async function createPost(authorId: string, title: string, content: string): Promise<Post> {
+export async function createPost(authorId: string, title: string, content: string, parentId?: number): Promise<Post> {
   const post = await sql`
-    INSERT INTO posts (author, title, content)
-    VALUES (${authorId}, ${title}, ${content})
-    RETURNING id, author, title, content, "createdAt", "updatedAt"
+    INSERT INTO posts (author, title, content, parent)
+    VALUES (${authorId}, ${title}, ${content}, ${parentId || null})
+    RETURNING id, author, title, content, parent, "createdAt", "updatedAt"
   `;
   return post[0] as Post;
-}
-
-export async function createComment(authorId: string, postId: number, content: string): Promise<Comment> {
-  const comment = await sql`
-    INSERT INTO comments (author, post, content)
-    VALUES (${authorId}, ${postId}, ${content})
-    RETURNING id, author, post, content, "createdAt", "updatedAt"
-  `;
-  return comment[0] as Comment;
 }
 
 export async function upsertVote(
   voterId: string, 
   valence: -1 | 1, 
-  postId?: number, 
-  commentId?: number
+  postId: number
 ): Promise<{ success: boolean }> {
   try {
-    if (postId) {
-      // Check if vote exists for this post
-      const existing = await sql`
-        SELECT id FROM votes
+    // Check if vote exists for this post
+    const existing = await sql`
+      SELECT id FROM votes
+      WHERE voter = ${voterId} AND post = ${postId}
+      LIMIT 1
+    `;
+    
+    if (existing.length > 0) {
+      // Update existing vote
+      await sql`
+        UPDATE votes
+        SET valence = ${valence}, "updatedAt" = CURRENT_TIMESTAMP
         WHERE voter = ${voterId} AND post = ${postId}
-        LIMIT 1
       `;
-      
-      if (existing.length > 0) {
-        // Update existing vote
-        await sql`
-          UPDATE votes
-          SET valence = ${valence}, "updatedAt" = CURRENT_TIMESTAMP
-          WHERE voter = ${voterId} AND post = ${postId}
-        `;
-      } else {
-        // Insert new vote
-        await sql`
-          INSERT INTO votes (voter, valence, post, comment)
-          VALUES (${voterId}, ${valence}, ${postId}, null)
-        `;
-      }
-    } else if (commentId) {
-      // Check if vote exists for this comment
-      const existing = await sql`
-        SELECT id FROM votes
-        WHERE voter = ${voterId} AND comment = ${commentId}
-        LIMIT 1
+    } else {
+      // Insert new vote
+      await sql`
+        INSERT INTO votes (voter, valence, post)
+        VALUES (${voterId}, ${valence}, ${postId})
       `;
-      
-      if (existing.length > 0) {
-        // Update existing vote
-        await sql`
-          UPDATE votes
-          SET valence = ${valence}, "updatedAt" = CURRENT_TIMESTAMP
-          WHERE voter = ${voterId} AND comment = ${commentId}
-        `;
-      } else {
-        // Insert new vote
-        await sql`
-          INSERT INTO votes (voter, valence, post, comment)
-          VALUES (${voterId}, ${valence}, null, ${commentId})
-        `;
-      }
     }
     
     return { success: true };
@@ -205,17 +213,6 @@ export async function getUserVoteOnPost(voterId: string, postId: number): Promis
     SELECT valence
     FROM votes
     WHERE voter = ${voterId} AND post = ${postId}
-    LIMIT 1
-  `;
-  
-  return result[0]?.valence ?? 0;
-}
-
-export async function getUserVoteOnComment(voterId: string, commentId: number): Promise<-1 | 0 | 1> {
-  const result = await sql`
-    SELECT valence
-    FROM votes
-    WHERE voter = ${voterId} AND comment = ${commentId}
     LIMIT 1
   `;
   

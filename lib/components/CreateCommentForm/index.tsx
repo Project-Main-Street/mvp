@@ -7,10 +7,12 @@ import { useUser } from "@stackframe/stack";
 import { useRef } from "react";
 
 interface CreateCommentFormProps {
-    postId: number;
+    parentId: number;
+    onSuccess?: () => void;
+    isReply?: boolean;
 }
 
-export default function CreateCommentForm({ postId }: CreateCommentFormProps) {
+export default function CreateCommentForm({ parentId, onSuccess, isReply = false }: CreateCommentFormProps) {
     const user = useUser();
     const router = useRouter();
     const formRef = useRef<HTMLFormElement>(null);
@@ -21,7 +23,7 @@ export default function CreateCommentForm({ postId }: CreateCommentFormProps) {
         if (!user) return;
 
         const formData = new FormData(e.currentTarget);
-        formData.append("postId", postId.toString());
+        formData.append("parentId", parentId.toString());
 
         try {
             const response = await fetch("/api/comment", {
@@ -38,6 +40,11 @@ export default function CreateCommentForm({ postId }: CreateCommentFormProps) {
             // Reset form and refresh page to show new comment
             formRef.current?.reset();
             router.refresh();
+
+            // Call success callback if provided
+            if (onSuccess) {
+                onSuccess();
+            }
         } catch (error) {
             console.error("Failed to submit comment:", error);
         }
@@ -46,14 +53,9 @@ export default function CreateCommentForm({ postId }: CreateCommentFormProps) {
     return (
         <Form.Root ref={formRef} onSubmit={handleSubmit}>
             <Form.Field name="content" style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                    <Form.Label>
-                        Add a comment
-                    </Form.Label>
-                    <Form.Message match="valueMissing">
-                        Please enter a comment
-                    </Form.Message>
-                </div>
+                <Form.Message match="valueMissing">
+                    Please enter a comment
+                </Form.Message>
                 <Form.Control asChild>
                     <TextArea placeholder="Write your comment..." required rows={3} />
                 </Form.Control>
@@ -61,7 +63,7 @@ export default function CreateCommentForm({ postId }: CreateCommentFormProps) {
 
             <Form.Submit asChild>
                 <Button type="submit" variant="solid">
-                    Submit Comment
+                    {isReply ? 'Reply' : 'Add Comment'}
                 </Button>
             </Form.Submit>
         </Form.Root>

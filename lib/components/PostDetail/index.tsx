@@ -27,7 +27,6 @@ export default function PostDetail({
     return (
         <Flex gap="4" maxWidth="576px">
             <VoteButton
-                type="post"
                 targetId={id}
                 totalVotes={totalVotes}
                 voteScore={voteScore}

@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
 
         // Parse request body
         const body = await request.json();
-        const { valence, postId, commentId } = body;
+        const { valence, postId } = body;
 
         // Validate input
         if (valence !== -1 && valence !== 1) {
@@ -28,22 +28,15 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        if (!postId && !commentId) {
+        if (!postId) {
             return NextResponse.json(
-                { error: "Either postId or commentId is required" },
-                { status: 400 }
-            );
-        }
-
-        if (postId && commentId) {
-            return NextResponse.json(
-                { error: "Cannot vote on both post and comment" },
+                { error: "Post ID is required" },
                 { status: 400 }
             );
         }
 
         // Upsert vote
-        await upsertVote(userId, valence, postId, commentId);
+        await upsertVote(userId, valence, postId);
 
         return NextResponse.json(
             { success: true },
