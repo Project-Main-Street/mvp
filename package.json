@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "migrate:posts": "tsx lib/migrations/run-migration.ts",
-    "migrate:comments": "tsx lib/migrations/run-comments-migration.ts"
+    "migrate:comments": "tsx lib/migrations/run-comments-migration.ts",
+    "migrate:votes": "tsx lib/migrations/run-votes-migration.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
