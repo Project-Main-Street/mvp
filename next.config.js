@@ -1,7 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.ctfassets.net", "i.pravatar.cc"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.ctfassets.net",
+      },
+      {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+      },
+    ],
   },
 };
 
