@@ -8,6 +8,7 @@ interface Post {
     id: number;
     title: string;
     content: string;
+    author: string;
     authorName: string;
     voteScore?: number;
     commentCount?: number;
@@ -26,6 +27,7 @@ export default function PostsList({ posts }: PostsListProps) {
                     id={post.id}
                     title={post.title}
                     content={post.content}
+                    author={post.author}
                     authorName={post.authorName}
                     voteScore={post.voteScore}
                     commentCount={post.commentCount}

@@ -46,10 +46,20 @@ export async function getPosts(): Promise<Post[]> {
 
 export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
   const posts = await sql`
-    SELECT id, author, title, content, "createdAt", "updatedAt"
-    FROM posts
-    WHERE author = ${authorId}
-    ORDER BY "createdAt" DESC
+    SELECT 
+      p.id, 
+      p.author,
+      u.name as "authorName",
+      p.title, 
+      p.content, 
+      p."createdAt", 
+      p."updatedAt",
+      COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+      COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
+    FROM posts p
+    LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    WHERE p.author = ${authorId} AND p.parent IS NULL
+    ORDER BY p."createdAt" DESC
   `;
   return posts as unknown as Post[];
 }
@@ -220,4 +230,47 @@ export async function getUserVoteOnPost(voterId: string, postId: number): Promis
   `;
   
   return result[0]?.valence ?? 0;
+}
+
+export async function getCommentsByAuthor(authorId: string): Promise<Post[]> {
+  const comments = await sql`
+    SELECT 
+      p.id, 
+      p.author, 
+      u.name as "authorName",
+      p.title, 
+      p.content, 
+      p.parent,
+      p."createdAt", 
+      p."updatedAt",
+      COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore"
+    FROM posts p
+    LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    WHERE p.author = ${authorId} AND p.parent IS NOT NULL
+    ORDER BY p."createdAt" DESC
+    LIMIT 10
+  `;
+  return comments as unknown as Post[];
+}
+
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  profileImageUrl: string | null;
+  primaryEmail: string | null;
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  const result = await sql`
+    SELECT 
+      id,
+      name,
+      raw_json->>'profile_image_url' as "profileImageUrl",
+      email as "primaryEmail"
+    FROM neon_auth.users_sync
+    WHERE id = ${userId} AND deleted_at IS NULL
+    LIMIT 1
+  `;
+  
+  return result[0] ? (result[0] as UserProfile) : null;
 }
