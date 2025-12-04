@@ -1,8 +1,10 @@
 import postgres from 'postgres'
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
+// Database connection singleton
+export const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
 
-interface Post {
+// Type definitions
+export interface Post {
   id: number;
   author: string;
   authorName: string;
@@ -21,6 +23,7 @@ interface Post {
   depth?: number;
 }
 
+// Query functions
 export async function getPosts(): Promise<Post[]> {
   const posts = await sql`
     SELECT 
