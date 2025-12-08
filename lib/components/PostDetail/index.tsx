@@ -1,4 +1,4 @@
-import { Heading, Text, Box, Flex } from "@radix-ui/themes";
+import { Heading, Text, Box, Flex, Link } from "@radix-ui/themes";
 import VoteButton from "@/lib/components/VoteButton";
 
 interface PostDetailProps {
@@ -6,6 +6,7 @@ interface PostDetailProps {
     title: string;
     content: string;
     authorName: string;
+    authorUsername?: string;
     totalVotes?: number;
     voteScore?: number;
     upvotes?: number;
@@ -18,6 +19,7 @@ export default function PostDetail({
     title,
     content,
     authorName,
+    authorUsername,
     totalVotes,
     voteScore,
     upvotes,
@@ -36,7 +38,13 @@ export default function PostDetail({
             />
             <Box>
                 <Text as="p" size="2" color="gray" mb="2">
-                    {authorName}
+                    {authorUsername ? (
+                        <Link href={`/dashboard/user/${authorUsername}`} color="blue">
+                            {authorName}
+                        </Link>
+                    ) : (
+                        authorName
+                    )}
                 </Text>
                 <Heading as="h1" size="8" mb="4">
                     {title}

@@ -8,6 +8,7 @@ export interface Post {
   id: number;
   author: string;
   authorName: string;
+  authorUsername?: string;
   title: string;
   content: string;
   createdAt: Date;
@@ -30,6 +31,7 @@ export async function getPosts(): Promise<Post[]> {
       p.id, 
       p.author, 
       u.name as "authorName",
+      pr.username as "authorUsername",
       p.title, 
       p.content, 
       p."createdAt", 
@@ -38,6 +40,7 @@ export async function getPosts(): Promise<Post[]> {
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    LEFT JOIN profiles pr ON p.author = pr.user_id
     WHERE p.parent IS NULL
     ORDER BY p."createdAt" DESC
   `;
@@ -50,6 +53,7 @@ export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
       p.id, 
       p.author,
       u.name as "authorName",
+      pr.username as "authorUsername",
       p.title, 
       p.content, 
       p."createdAt", 
@@ -58,6 +62,7 @@ export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    LEFT JOIN profiles pr ON p.author = pr.user_id
     WHERE p.author = ${authorId} AND p.parent IS NULL
     ORDER BY p."createdAt" DESC
   `;
@@ -70,6 +75,7 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
       p.id, 
       p.author, 
       u.name as "authorName",
+      pr.username as "authorUsername",
       p.title, 
       p.content, 
       p."createdAt", 
@@ -80,9 +86,10 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
       COALESCE(SUM(CASE WHEN v.valence = -1 THEN 1 ELSE 0 END), 0)::int as downvotes
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    LEFT JOIN profiles pr ON p.author = pr.user_id
     LEFT JOIN votes v ON v.post = p.id
     WHERE p.id = ${id}
-    GROUP BY p.id, p.author, u.name, p.title, p.content, p."createdAt", p."updatedAt"
+    GROUP BY p.id, p.author, u.name, pr.username, p.title, p.content, p."createdAt", p."updatedAt"
     LIMIT 1
   `;
   
@@ -104,6 +111,7 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
         p.id,
         p.author,
         u.name as "authorName",
+        pr.username as "authorUsername",
         p.title,
         p.content,
         p.parent,
@@ -113,6 +121,7 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
         1 as depth
       FROM posts p
       LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
       WHERE p.parent = ${id}
       
       UNION ALL
@@ -122,6 +131,7 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
         p.id,
         p.author,
         u.name as "authorName",
+        pr.username as "authorUsername",
         p.title,
         p.content,
         p.parent,
@@ -131,6 +141,7 @@ export async function getPostById(id: string, userId?: string): Promise<Post | u
         tt.depth + 1
       FROM posts p
       LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
       INNER JOIN thread_tree tt ON p.parent = tt.id
     )
     SELECT * FROM thread_tree
@@ -238,6 +249,7 @@ export async function getCommentsByAuthor(authorId: string): Promise<Post[]> {
       p.id, 
       p.author, 
       u.name as "authorName",
+      pr.username as "authorUsername",
       p.title, 
       p.content, 
       p.parent,
@@ -246,6 +258,7 @@ export async function getCommentsByAuthor(authorId: string): Promise<Post[]> {
       COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore"
     FROM posts p
     LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+    LEFT JOIN profiles pr ON p.author = pr.user_id
     WHERE p.author = ${authorId} AND p.parent IS NOT NULL
     ORDER BY p."createdAt" DESC
     LIMIT 10
@@ -269,6 +282,22 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       email as "primaryEmail"
     FROM neon_auth.users_sync
     WHERE id = ${userId} AND deleted_at IS NULL
+    LIMIT 1
+  `;
+  
+  return result[0] ? (result[0] as UserProfile) : null;
+}
+
+export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {
+  const result = await sql`
+    SELECT 
+      u.id,
+      u.name,
+      u.raw_json->>'profile_image_url' as "profileImageUrl",
+      u.email as "primaryEmail"
+    FROM neon_auth.users_sync u
+    INNER JOIN profiles p ON u.id = p.user_id
+    WHERE p.username = ${username} AND u.deleted_at IS NULL
     LIMIT 1
   `;
   

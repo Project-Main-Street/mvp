@@ -1,27 +1,27 @@
 import { notFound } from "next/navigation";
-import { getUserProfile, getPostsByAuthor, getCommentsByAuthor } from "@/lib/db";
+import { getUserProfileByUsername, getPostsByAuthor, getCommentsByAuthor } from "@/lib/db";
 import UserProfile from "@/lib/components/UserProfile";
 import UserPosts from "@/lib/components/UserPosts";
 import UserComments from "@/lib/components/UserComments";
 
 interface UserPageProps {
-    params: Promise<{ id: string }>;
+    params: Promise<{ username: string }>;
 }
 
 export default async function UserPage({ params }: UserPageProps) {
-    const { id } = await params;
+    const { username } = await params;
 
-    // Fetch user profile from database
-    const userProfile = await getUserProfile(id);
+    // Fetch user profile from database by username
+    const userProfile = await getUserProfileByUsername(username);
 
     if (!userProfile) {
         notFound();
     }
 
-    // Fetch user's posts and comments in parallel
+    // Fetch user's posts and comments in parallel using the user ID
     const [posts, comments] = await Promise.all([
-        getPostsByAuthor(id),
-        getCommentsByAuthor(id),
+        getPostsByAuthor(userProfile.id),
+        getCommentsByAuthor(userProfile.id),
     ]);
 
     // Transform database profile to match Stack User interface expected by UserProfile component

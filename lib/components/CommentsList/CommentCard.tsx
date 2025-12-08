@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Text, Flex, Button } from "@radix-ui/themes";
+import { Card, Text, Flex, Button, Link } from "@radix-ui/themes";
 import VoteButton from "@/lib/components/VoteButton";
 import { useState } from "react";
 import CreateCommentForm from "@/lib/components/CreateCommentForm";
@@ -9,6 +9,7 @@ interface Comment {
     id: number;
     content: string;
     authorName: string;
+    authorUsername?: string;
     createdAt: Date;
     voteScore?: number;
     userVote?: -1 | 0 | 1;
@@ -46,7 +47,13 @@ export default function CommentCard({ comment }: CommentCardProps) {
                     <Flex direction="column" flexGrow="1">
                         <Flex justify="between" align="center" mb="2">
                             <Text size="1" color="gray">
-                                {comment.authorName}
+                                {comment.authorUsername ? (
+                                    <Link href={`/dashboard/user/${comment.authorUsername}`} color="blue">
+                                        {comment.authorName}
+                                    </Link>
+                                ) : (
+                                    comment.authorName
+                                )}
                             </Text>
                             <Text size="1" color="gray">
                                 {formatDateTime(comment.createdAt)}

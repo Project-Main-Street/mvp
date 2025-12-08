@@ -27,6 +27,7 @@ export default function UserPosts({ posts }: UserPostsProps) {
                         content={post.content}
                         author={post.author}
                         authorName={post.authorName}
+                        authorUsername={post.authorUsername}
                         voteScore={post.voteScore}
                         commentCount={post.commentCount}
                     />

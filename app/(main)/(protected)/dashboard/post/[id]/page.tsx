@@ -30,6 +30,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 title={post.title}
                 content={post.content}
                 authorName={post.authorName}
+                authorUsername={post.authorUsername}
                 totalVotes={post.totalVotes}
                 voteScore={post.voteScore}
                 upvotes={post.upvotes}
