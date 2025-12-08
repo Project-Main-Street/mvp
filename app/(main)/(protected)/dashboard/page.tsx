@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         <Section>
             <Container>
                 {/* Business Section */}
-                <Box mb="6">
+                <Box mb="6" style={{ maxWidth: '576px', marginLeft: 'auto', marginRight: 'auto' }}>
                     <Heading as="h2" size="5" mb="3">
                         Your Business
                     </Heading>

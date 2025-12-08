@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { getUserProfileByUsername, getPostsByAuthor, getCommentsByAuthor } from "@/lib/db";
+import { getUserProfileByUsername, getPostsByAuthor, getCommentsByAuthor, getBusinessByUserId } from "@/lib/db";
 import UserProfile from "@/lib/components/UserProfile";
 import UserPosts from "@/lib/components/UserPosts";
 import UserComments from "@/lib/components/UserComments";
+import BusinessPreviewCard from "@/lib/components/BusinessPreviewCard";
 
 interface UserPageProps {
     params: Promise<{ username: string }>;
@@ -18,10 +19,11 @@ export default async function UserPage({ params }: UserPageProps) {
         notFound();
     }
 
-    // Fetch user's posts and comments in parallel using the user ID
-    const [posts, comments] = await Promise.all([
+    // Fetch user's posts, comments, and business in parallel using the user ID
+    const [posts, comments, business] = await Promise.all([
         getPostsByAuthor(userProfile.id),
         getCommentsByAuthor(userProfile.id),
+        getBusinessByUserId(userProfile.id),
     ]);
 
     // Transform database profile to match Stack User interface expected by UserProfile component
@@ -33,10 +35,18 @@ export default async function UserPage({ params }: UserPageProps) {
     };
 
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
-            <UserProfile user={user as any} />
-            <UserPosts posts={posts} />
-            <UserComments comments={comments} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+            <div style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <UserProfile user={user as any} />
+                {business && (
+                    <div>
+                        <h2 className="text-xl font-semibold mb-3">Business</h2>
+                        <BusinessPreviewCard business={business} />
+                    </div>
+                )}
+                <UserPosts posts={posts} />
+                <UserComments comments={comments} />
+            </div>
         </div>
     );
 }
