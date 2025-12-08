@@ -6,5 +6,6 @@ export const stackClientApp = new StackClientApp({
     signIn: '/sign-in',
     signUp: '/sign-up',
     afterSignIn: '/dashboard',
+    accountSettings: '/account',
   }
 });
