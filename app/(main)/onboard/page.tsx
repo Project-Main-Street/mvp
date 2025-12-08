@@ -3,7 +3,7 @@ import OnboardingForm from "@/lib/components/OnboardingForm";
 
 export default function OnboardPage() {
     return (
-        <Section>
+        <Section style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2rem' }}>
             <Container size="1" style={{ maxWidth: '500px' }}>
                 <Box py="6">
                     <Heading as="h1" size="6" mb="2" align="center">
