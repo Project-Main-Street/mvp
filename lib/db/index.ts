@@ -274,3 +274,88 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   
   return result[0] ? (result[0] as UserProfile) : null;
 }
+
+// Profile management
+export interface Profile {
+  id: string;
+  userId: string;
+  username: string;
+  location: string | null;
+  businessId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const result = await sql`
+    SELECT 
+      id,
+      user_id as "userId",
+      username,
+      location,
+      business_id as "businessId",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM profiles
+    WHERE user_id = ${userId}
+    LIMIT 1
+  `;
+  
+  return result[0] ? (result[0] as Profile) : null;
+}
+
+export async function checkUsernameAvailable(username: string): Promise<boolean> {
+  const result = await sql`
+    SELECT 1 FROM profiles WHERE username = ${username} LIMIT 1
+  `;
+  return result.length === 0;
+}
+
+export async function createProfile(data: {
+  userId: string;
+  username: string;
+  location?: string;
+  businessId?: string;
+}): Promise<{ success: boolean; error?: string; profile?: Profile }> {
+  try {
+    // Check if username is already taken
+    const isAvailable = await checkUsernameAvailable(data.username);
+    if (!isAvailable) {
+      return { success: false, error: 'Username already taken' };
+    }
+
+    // Check if user already has a profile
+    const existing = await getProfile(data.userId);
+    if (existing) {
+      return { success: false, error: 'Profile already exists' };
+    }
+
+    // Insert new profile
+    const result = await sql`
+      INSERT INTO profiles (user_id, username, location, business_id)
+      VALUES (
+        ${data.userId}, 
+        ${data.username}, 
+        ${data.location || null}, 
+        ${data.businessId || null}
+      )
+      RETURNING 
+        id,
+        user_id as "userId",
+        username,
+        location,
+        business_id as "businessId",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+    `;
+
+    return { success: true, profile: result[0] as Profile };
+  } catch (error: any) {
+    // Handle unique constraint violation
+    if (error.code === '23505') {
+      return { success: false, error: 'Username already taken' };
+    }
+    console.error('Error creating profile:', error);
+    throw error;
+  }
+}

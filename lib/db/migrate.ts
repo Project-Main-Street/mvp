@@ -1,6 +1,10 @@
 import postgres from 'postgres';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { config } from 'dotenv';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 /**
  * Run database migrations by executing SQL schema files
@@ -25,6 +29,12 @@ export async function runMigrations() {
     const votesSchema = await readFile(join(schemaDir, 'votes.sql'), 'utf-8');
     await sql.unsafe(votesSchema);
     console.log('✅ Votes table created');
+    
+    // 3. Create profiles table (depends on neon_auth.users_sync)
+    console.log('Creating profiles table...');
+    const profilesSchema = await readFile(join(schemaDir, 'profiles.sql'), 'utf-8');
+    await sql.unsafe(profilesSchema);
+    console.log('✅ Profiles table created');
     
     console.log('✅ All migrations completed successfully');
     
