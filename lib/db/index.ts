@@ -519,7 +519,7 @@ export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
     FROM employee_count_ranges
     ORDER BY display_order ASC
   `;
-  return result as EmployeeCountRange[];
+  return result as unknown as EmployeeCountRange[];
 }
 
 export async function getRevenueRanges(): Promise<RevenueRange[]> {
@@ -533,7 +533,7 @@ export async function getRevenueRanges(): Promise<RevenueRange[]> {
     FROM revenue_ranges
     ORDER BY display_order ASC
   `;
-  return result as RevenueRange[];
+  return result as unknown as RevenueRange[];
 }
 
 export async function updateProfileBusinessId(userId: string, businessId: string): Promise<void> {
