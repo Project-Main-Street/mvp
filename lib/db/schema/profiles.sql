@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   user_id TEXT UNIQUE NOT NULL REFERENCES neon_auth.users_sync(id) ON DELETE CASCADE,
   username TEXT UNIQUE NOT NULL,
   location TEXT, -- ZIP code
-  business_id UUID, -- Will add FK constraint when businesses table is created
+  business_id UUID REFERENCES businesses(id) ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -388,3 +388,158 @@ export async function createProfile(data: {
     throw error;
   }
 }
+
+// Business management
+export interface EmployeeCountRange {
+  id: number;
+  label: string;
+  minCount: number | null;
+  maxCount: number | null;
+  displayOrder: number;
+}
+
+export interface RevenueRange {
+  id: number;
+  label: string;
+  minRevenue: number | null;
+  maxRevenue: number | null;
+  displayOrder: number;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  location: string | null;
+  category: string | null;
+  employeeCountRangeId: number | null;
+  employeeCountRangeLabel: string | null;
+  revenueRangeId: number | null;
+  revenueRangeLabel: string | null;
+  products: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export async function getBusiness(businessId: string): Promise<Business | null> {
+  const result = await sql`
+    SELECT 
+      b.id,
+      b.name,
+      b.location,
+      b.category,
+      b.employee_count_range_id as "employeeCountRangeId",
+      ecr.label as "employeeCountRangeLabel",
+      b.revenue_range_id as "revenueRangeId",
+      rr.label as "revenueRangeLabel",
+      b.products,
+      b.created_at as "createdAt",
+      b.updated_at as "updatedAt"
+    FROM businesses b
+    LEFT JOIN employee_count_ranges ecr ON b.employee_count_range_id = ecr.id
+    LEFT JOIN revenue_ranges rr ON b.revenue_range_id = rr.id
+    WHERE b.id = ${businessId}
+    LIMIT 1
+  `;
+  
+  return result[0] ? (result[0] as Business) : null;
+}
+
+export async function getBusinessByUserId(userId: string): Promise<Business | null> {
+  const result = await sql`
+    SELECT 
+      b.id,
+      b.name,
+      b.location,
+      b.category,
+      b.employee_count_range_id as "employeeCountRangeId",
+      ecr.label as "employeeCountRangeLabel",
+      b.revenue_range_id as "revenueRangeId",
+      rr.label as "revenueRangeLabel",
+      b.products,
+      b.created_at as "createdAt",
+      b.updated_at as "updatedAt"
+    FROM businesses b
+    INNER JOIN profiles p ON b.id = p.business_id
+    LEFT JOIN employee_count_ranges ecr ON b.employee_count_range_id = ecr.id
+    LEFT JOIN revenue_ranges rr ON b.revenue_range_id = rr.id
+    WHERE p.user_id = ${userId}
+    LIMIT 1
+  `;
+  
+  return result[0] ? (result[0] as Business) : null;
+}
+
+export async function createBusiness(data: {
+  name: string;
+  location?: string;
+  category?: string;
+  employeeCountRangeId?: number;
+  revenueRangeId?: number;
+  products?: string;
+}): Promise<{ success: boolean; error?: string; business?: Business }> {
+  try {
+    // Insert new business
+    const result = await sql`
+      INSERT INTO businesses (
+        name, 
+        location, 
+        category, 
+        employee_count_range_id,
+        revenue_range_id,
+        products
+      )
+      VALUES (
+        ${data.name}, 
+        ${data.location || null}, 
+        ${data.category || null},
+        ${data.employeeCountRangeId || null},
+        ${data.revenueRangeId || null},
+        ${data.products || null}
+      )
+      RETURNING id
+    `;
+
+    // Fetch the full business with range labels
+    const business = await getBusiness(result[0].id);
+    return { success: true, business: business! };
+  } catch (error: any) {
+    console.error('Error creating business:', error);
+    return { success: false, error: 'Failed to create business' };
+  }
+}
+
+export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
+  const result = await sql`
+    SELECT 
+      id,
+      label,
+      min_count as "minCount",
+      max_count as "maxCount",
+      display_order as "displayOrder"
+    FROM employee_count_ranges
+    ORDER BY display_order ASC
+  `;
+  return result as EmployeeCountRange[];
+}
+
+export async function getRevenueRanges(): Promise<RevenueRange[]> {
+  const result = await sql`
+    SELECT 
+      id,
+      label,
+      min_revenue as "minRevenue",
+      max_revenue as "maxRevenue",
+      display_order as "displayOrder"
+    FROM revenue_ranges
+    ORDER BY display_order ASC
+  `;
+  return result as RevenueRange[];
+}
+
+export async function updateProfileBusinessId(userId: string, businessId: string): Promise<void> {
+  await sql`
+    UPDATE profiles
+    SET business_id = ${businessId}, updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ${userId}
+  `;
+}

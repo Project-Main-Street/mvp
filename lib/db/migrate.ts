@@ -30,7 +30,31 @@ export async function runMigrations() {
     await sql.unsafe(votesSchema);
     console.log('✅ Votes table created');
     
-    // 3. Create profiles table (depends on neon_auth.users_sync)
+    // 3. Create employee count ranges table (no dependencies)
+    console.log('Creating employee count ranges table...');
+    const employeeRangesSchema = await readFile(join(schemaDir, 'employee_count_ranges.sql'), 'utf-8');
+    await sql.unsafe(employeeRangesSchema);
+    console.log('✅ Employee count ranges table created');
+    
+    // 4. Create revenue ranges table (no dependencies)
+    console.log('Creating revenue ranges table...');
+    const revenueRangesSchema = await readFile(join(schemaDir, 'revenue_ranges.sql'), 'utf-8');
+    await sql.unsafe(revenueRangesSchema);
+    console.log('✅ Revenue ranges table created');
+    
+    // 5. Create businesses table (depends on employee_count_ranges and revenue_ranges)
+    console.log('Creating businesses table...');
+    const businessesSchema = await readFile(join(schemaDir, 'businesses.sql'), 'utf-8');
+    await sql.unsafe(businessesSchema);
+    console.log('✅ Businesses table created');
+    
+    // 5a. Alter businesses table to use range FKs (if table already exists with old schema)
+    console.log('Updating businesses table schema...');
+    const alterBusinessesSchema = await readFile(join(schemaDir, 'alter_businesses.sql'), 'utf-8');
+    await sql.unsafe(alterBusinessesSchema);
+    console.log('✅ Businesses table schema updated');
+    
+    // 6. Create profiles table (depends on neon_auth.users_sync and businesses)
     console.log('Creating profiles table...');
     const profilesSchema = await readFile(join(schemaDir, 'profiles.sql'), 'utf-8');
     await sql.unsafe(profilesSchema);
