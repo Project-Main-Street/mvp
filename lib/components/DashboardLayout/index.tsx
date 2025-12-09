@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Box>
 
                     {/* Main Content Panel */}
-                    <Box style={{ flex: 1, minWidth: 0, padding: '24px', display: 'flex', justifyContent: 'flex-start' }}>
+                    <Box className="dashboard-main-panel" style={{ flex: 1, minWidth: 0, padding: '24px', display: 'flex', justifyContent: 'flex-start' }}>
                         <Box style={{ width: '100%', maxWidth: '100%' }}>
                             {children}
                         </Box>

@@ -2,11 +2,9 @@ import PostsList from "@/lib/components/PostsList";
 import { getPosts } from "@/lib/db";
 import { Heading, Box, Button, Flex } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
-import { stackServerApp } from "@/stack/server";
 import Link from "next/link";
 
 export default async function PostsPage() {
-    const user = await stackServerApp.getUser({ or: "redirect" });
     const posts = await getPosts();
 
     return (

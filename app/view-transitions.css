@@ -1,48 +1,53 @@
-/* View Transitions API styles */
-@view-transition {
-  navigation: auto;
-}
+/* View Transitions API - works automatically in browsers that support it */
 
-/* Smooth fade transition */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.2s;
-  animation-timing-function: ease-in-out;
-}
-
-::view-transition-old(root) {
-  animation-name: fade-out;
-}
-
-::view-transition-new(root) {
-  animation-name: fade-in;
-}
-
-@keyframes fade-out {
-  from {
-    opacity: 1;
+/* Enable view transitions for supporting browsers */
+@supports (view-transition-name: none) {
+  /* Smooth fade transition */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.25s;
+    animation-timing-function: ease-in-out;
   }
-  to {
-    opacity: 0;
-  }
-}
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
+  ::view-transition-old(root) {
+    animation-name: fade-out;
   }
-  to {
-    opacity: 1;
+
+  ::view-transition-new(root) {
+    animation-name: fade-in;
   }
-}
 
-/* Prevent the side panel from transitioning */
-.dashboard-side-panel {
-  view-transition-name: dashboard-nav;
-}
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
 
-::view-transition-old(dashboard-nav),
-::view-transition-new(dashboard-nav) {
-  animation: none;
-  mix-blend-mode: normal;
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Prevent the side panel from transitioning - it stays in place */
+  .dashboard-side-panel {
+    view-transition-name: dashboard-nav;
+  }
+
+  ::view-transition-old(dashboard-nav),
+  ::view-transition-new(dashboard-nav) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* Give the main content panel its own transition */
+  .dashboard-main-panel {
+    view-transition-name: main-content;
+  }
 }

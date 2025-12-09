@@ -7,13 +7,14 @@ import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { Inter } from 'next/font/google'
 import { Theme } from "@radix-ui/themes";
+import ViewTransitions from "@/lib/components/ViewTransitions";
 
 
 export const metadata = {
   metadataBase: new URL('https://postgres-starter.vercel.app'),
-  title: 'Postgres Demo',
+  title: 'Main Street',
   description:
-    'A simple Next.js app with a Postgres database',
+    'A community-driven platform to share and discuss ideas.',
 }
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
         <StackProvider app={stackClientApp}>
           <StackTheme>
             <Theme>
+              <ViewTransitions />
               {children}
             </Theme>
           </StackTheme>
