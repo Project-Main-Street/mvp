@@ -1,6 +1,7 @@
 // import './globals.css'
 
 import "@radix-ui/themes/styles.css";
+import "./view-transitions.css";
 
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
@@ -27,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ viewTransitionName: 'none' }}>
       <body className={inter.variable}>
         <StackProvider app={stackClientApp}>
           <StackTheme>

@@ -584,6 +584,53 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
   return result as unknown as ProductCategory[];
 }
 
+export async function getAllProducts(): Promise<Product[]> {
+  const result = await sql`
+    SELECT 
+      p.id,
+      p.name,
+      p.slug,
+      p.category_id as "categoryId",
+      pc.name as "categoryName",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    FROM products p
+    LEFT JOIN product_categories pc ON p.category_id = pc.id
+    ORDER BY pc.name, p.name
+  `;
+  return result as unknown as Product[];
+}
+
+export async function getAllBusinesses(): Promise<Business[]> {
+  const result = await sql`
+    SELECT 
+      b.id,
+      b.name,
+      b.location,
+      b.category,
+      b.employee_count_range_id as "employeeCountRangeId",
+      ecr.label as "employeeCountRangeLabel",
+      b.revenue_range_id as "revenueRangeId",
+      rr.label as "revenueRangeLabel",
+      b.created_at as "createdAt",
+      b.updated_at as "updatedAt"
+    FROM businesses b
+    LEFT JOIN employee_count_ranges ecr ON b.employee_count_range_id = ecr.id
+    LEFT JOIN revenue_ranges rr ON b.revenue_range_id = rr.id
+    ORDER BY b.created_at DESC
+  `;
+
+  // Fetch products for each business
+  const businesses = result as unknown as Business[];
+  await Promise.all(
+    businesses.map(async (business) => {
+      business.products = await getProductsByBusinessId(business.id);
+    })
+  );
+
+  return businesses;
+}
+
 export async function getProductById(productId: number): Promise<Product | null> {
   const result = await sql`
     SELECT 
