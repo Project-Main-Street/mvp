@@ -72,6 +72,18 @@ export async function runMigrations() {
     await sql.unsafe(alterBusinessesProductsSchema);
     console.log('✅ Old products column removed');
     
+    // 5e. Add slug column to products table
+    console.log('Adding slug column to products table...');
+    const addProductSlugSchema = await readFile(join(schemaDir, 'add_product_slug.sql'), 'utf-8');
+    await sql.unsafe(addProductSlugSchema);
+    console.log('✅ Slug column added to products table');
+    
+    // 5f. Create business_products join table
+    console.log('Creating business_products join table...');
+    const businessProductsSchema = await readFile(join(schemaDir, 'business_products.sql'), 'utf-8');
+    await sql.unsafe(businessProductsSchema);
+    console.log('✅ Business_products join table created');
+    
     // 6. Create profiles table (depends on neon_auth.users_sync and businesses)
     console.log('Creating profiles table...');
     const profilesSchema = await readFile(join(schemaDir, 'profiles.sql'), 'utf-8');

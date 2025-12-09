@@ -18,6 +18,7 @@ interface RevenueRange {
 interface ReferenceProduct {
     id: number;
     name: string;
+    slug: string;
     categoryId: number | null;
     categoryName: string | null;
 }

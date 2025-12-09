@@ -415,9 +415,9 @@ export interface ProductCategory {
 export interface Product {
   id: number;
   name: string;
+  slug: string;
   categoryId: number | null;
   categoryName: string | null;
-  businessId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -589,9 +589,9 @@ export async function getProductById(productId: number): Promise<Product | null>
     SELECT 
       p.id,
       p.name,
+      p.slug,
       p.category_id as "categoryId",
       pc.name as "categoryName",
-      p.business_id as "businessId",
       p.created_at as "createdAt",
       p.updated_at as "updatedAt"
     FROM products p
@@ -606,43 +606,79 @@ export async function getProductsByBusinessId(businessId: string): Promise<Produ
     SELECT 
       p.id,
       p.name,
+      p.slug,
       p.category_id as "categoryId",
       pc.name as "categoryName",
-      p.business_id as "businessId",
       p.created_at as "createdAt",
       p.updated_at as "updatedAt"
     FROM products p
     LEFT JOIN product_categories pc ON p.category_id = pc.id
-    WHERE p.business_id = ${businessId}
-    ORDER BY p.created_at DESC
+    INNER JOIN business_products bp ON p.id = bp.product_id
+    WHERE bp.business_id = ${businessId}
+    ORDER BY p.name
   `;
   return result as unknown as Product[];
 }
 
-export async function createProduct(
-  name: string, 
-  categoryId: number | null, 
-  businessId: string
-): Promise<Product> {
+export async function getProductBySlug(slug: string): Promise<Product | null> {
   const result = await sql`
-    INSERT INTO products (name, category_id, business_id)
-    VALUES (${name}, ${categoryId}, ${businessId})
-    RETURNING 
-      id,
-      name,
-      category_id as "categoryId",
-      business_id as "businessId",
-      created_at as "createdAt",
-      updated_at as "updatedAt"
+    SELECT 
+      p.id,
+      p.name,
+      p.slug,
+      p.category_id as "categoryId",
+      pc.name as "categoryName",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    FROM products p
+    LEFT JOIN product_categories pc ON p.category_id = pc.id
+    WHERE p.slug = ${slug}
+    LIMIT 1
   `;
-  return result[0] as unknown as Product;
+  return result.length > 0 ? (result[0] as unknown as Product) : null;
 }
 
-export async function deleteProduct(productId: number): Promise<void> {
-  await sql`
-    DELETE FROM products
-    WHERE id = ${productId}
+export async function getProductUsageCount(slug: string): Promise<number> {
+  const result = await sql`
+    SELECT COUNT(DISTINCT bp.business_id)::int as count
+    FROM products p
+    INNER JOIN business_products bp ON p.id = bp.product_id
+    WHERE p.slug = ${slug}
   `;
+  return result[0]?.count || 0;
+}
+
+export async function addProductToBusiness(businessId: string, productId: number): Promise<void> {
+  await sql`
+    INSERT INTO business_products (business_id, product_id)
+    VALUES (${businessId}, ${productId})
+    ON CONFLICT (business_id, product_id) DO NOTHING
+  `;
+}
+
+export async function removeProductFromBusiness(businessId: string, productId: number): Promise<void> {
+  await sql`
+    DELETE FROM business_products
+    WHERE business_id = ${businessId}
+    AND product_id = ${productId}
+  `;
+}
+
+export async function setBusinessProducts(businessId: string, productIds: number[]): Promise<void> {
+  // Delete all existing products for this business
+  await sql`
+    DELETE FROM business_products
+    WHERE business_id = ${businessId}
+  `;
+  
+  // Add new products
+  if (productIds.length > 0) {
+    await sql`
+      INSERT INTO business_products (business_id, product_id)
+      SELECT ${businessId}, unnest(${productIds}::int[])
+      ON CONFLICT (business_id, product_id) DO NOTHING
+    `;
+  }
 }
 
 export async function updateBusiness(
@@ -692,8 +728,8 @@ export async function updateProduct(
     RETURNING 
       id,
       name,
+      slug,
       category_id as "categoryId",
-      business_id as "businessId",
       created_at as "createdAt",
       updated_at as "updatedAt"
   `;

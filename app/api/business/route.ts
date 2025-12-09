@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack/server";
-import { createBusiness, updateProfileBusinessId, getBusinessByUserId, createProduct, updateBusiness, getProductsByBusinessId, deleteProduct, getProductById } from "@/lib/db";
+import { createBusiness, updateProfileBusinessId, getBusinessByUserId, updateBusiness, setBusinessProducts } from "@/lib/db";
 
 // POST /api/business - Create a new business
 export async function POST(req: NextRequest) {
@@ -66,16 +66,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create products if provided (copy from reference products)
+    // Add products to business if provided
     if (productIds && Array.isArray(productIds) && productIds.length > 0) {
-      await Promise.all(
-        productIds.map(async (productId: number) => {
-          const refProduct = await getProductById(productId);
-          if (refProduct) {
-            await createProduct(refProduct.name, refProduct.categoryId || null, result.business!.id);
-          }
-        })
-      );
+      await setBusinessProducts(result.business.id, productIds);
     }
 
     // Update user's profile to link to this business
@@ -194,24 +187,9 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update products - replace all with new selection
+    // Update products
     if (productIds && Array.isArray(productIds)) {
-      // Get existing products
-      const existingProducts = await getProductsByBusinessId(existingBusiness.id);
-      
-      // Delete all existing products
-      await Promise.all(
-        existingProducts.map(product => deleteProduct(product.id))
-      );
-
-      // Create new products from selected reference products
-      await Promise.all(
-        productIds.map(async (productId: number) => {
-          const refProduct = await getProductById(productId);
-          if (refProduct) {
-            await createProduct(refProduct.name, refProduct.categoryId || null, existingBusiness.id);
-          }
-        })
-      );
+      await setBusinessProducts(existingBusiness.id, productIds);
     }
 
     // Fetch updated business with products

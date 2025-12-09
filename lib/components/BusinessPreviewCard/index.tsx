@@ -56,10 +56,20 @@ export default function BusinessPreviewCard({ business, isOwner = false }: Busin
                                 </Text>
                                 <Flex gap="2" wrap="wrap" mt="1">
                                     {business.products.map((product) => (
-                                        <Badge key={product.id} color="green" variant="soft">
-                                            {product.name}
-                                            {product.categoryName && ` • ${product.categoryName}`}
-                                        </Badge>
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.slug}`}
+                                            style={{ textDecoration: 'none' }}
+                                        >
+                                            <Badge
+                                                color="green"
+                                                variant="soft"
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {product.name}
+                                                {product.categoryName && ` • ${product.categoryName}`}
+                                            </Badge>
+                                        </Link>
                                     ))}
                                 </Flex>
                             </div>
