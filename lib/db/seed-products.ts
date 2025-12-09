@@ -114,7 +114,6 @@ async function seedProducts() {
         SELECT id FROM products 
         WHERE name = ${productName} 
         AND category_id = ${categoryId}
-        AND business_id IS NULL
         LIMIT 1
       `;
 
@@ -123,10 +122,10 @@ async function seedProducts() {
         continue;
       }
 
-      // Insert product (no business_id means it's a template/reference product)
+      // Insert product (template/reference product)
       await sql`
-        INSERT INTO products (name, category_id, business_id)
-        VALUES (${productName}, ${categoryId}, NULL)
+        INSERT INTO products (name, category_id)
+        VALUES (${productName}, ${categoryId})
       `;
       insertedCount++;
     }
@@ -140,7 +139,7 @@ async function seedProducts() {
         pc.name as category,
         COUNT(p.id) as product_count
       FROM product_categories pc
-      LEFT JOIN products p ON pc.id = p.category_id AND p.business_id IS NULL
+      LEFT JOIN products p ON pc.id = p.category_id
       GROUP BY pc.name
       ORDER BY pc.name
     `;
