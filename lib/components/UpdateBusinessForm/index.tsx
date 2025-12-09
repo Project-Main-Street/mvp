@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, TextField, Text, Box, Card, Flex, Select, IconButton } from '@radix-ui/themes';
 import { PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
+import { Business } from '@/lib/db';
 
 interface EmployeeCountRange {
     id: number;
@@ -21,25 +22,30 @@ interface ProductCategory {
 }
 
 interface ProductInput {
+    id?: number;
     name: string;
     categoryId: string;
 }
 
-export default function CreateBusinessForm() {
+interface UpdateBusinessFormProps {
+    business: Business;
+}
+
+export default function UpdateBusinessForm({ business }: UpdateBusinessFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [employeeCountRanges, setEmployeeCountRanges] = useState<EmployeeCountRange[]>([]);
     const [revenueRanges, setRevenueRanges] = useState<RevenueRange[]>([]);
     const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
-    const [products, setProducts] = useState<ProductInput[]>([{ name: '', categoryId: '' }]);
+    const [products, setProducts] = useState<ProductInput[]>([]);
 
     const [formData, setFormData] = useState({
-        name: '',
-        location: '',
-        category: '',
-        employeeCountRangeId: '',
-        revenueRangeId: ''
+        name: business.name,
+        location: business.location || '',
+        category: business.category || '',
+        employeeCountRangeId: business.employeeCountRangeId?.toString() || '',
+        revenueRangeId: business.revenueRangeId?.toString() || ''
     });
 
     // Load ranges and product categories on mount
@@ -66,7 +72,18 @@ export default function CreateBusinessForm() {
             }
         }
         loadData();
-    }, []);
+
+        // Initialize products from business
+        if (business.products && business.products.length > 0) {
+            setProducts(business.products.map(p => ({
+                id: p.id,
+                name: p.name,
+                categoryId: p.categoryId?.toString() || ''
+            })));
+        } else {
+            setProducts([{ name: '', categoryId: '' }]);
+        }
+    }, [business]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +95,7 @@ export default function CreateBusinessForm() {
             const validProducts = products.filter(p => p.name.trim() && p.categoryId);
 
             const response = await fetch('/api/business', {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -89,16 +106,17 @@ export default function CreateBusinessForm() {
                     employeeCountRangeId: formData.employeeCountRangeId ? parseInt(formData.employeeCountRangeId) : undefined,
                     revenueRangeId: formData.revenueRangeId ? parseInt(formData.revenueRangeId) : undefined,
                     products: validProducts.length > 0 ? validProducts.map(p => ({
+                        id: p.id,
                         name: p.name,
                         categoryId: parseInt(p.categoryId)
-                    })) : undefined
+                    })) : []
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to create business');
+                throw new Error(data.error || 'Failed to update business');
             }
 
             // Redirect to dashboard on success
@@ -291,13 +309,26 @@ export default function CreateBusinessForm() {
                         </Text>
                     )}
 
-                    <Button
-                        type="submit"
-                        disabled={isLoading || !formData.name.trim()}
-                        size="3"
-                    >
-                        {isLoading ? 'Creating...' : 'Create Business'}
-                    </Button>
+                    <Flex gap="3">
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !formData.name.trim()}
+                            size="3"
+                            style={{ flex: 1 }}
+                        >
+                            {isLoading ? 'Updating...' : 'Update Business'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="soft"
+                            color="gray"
+                            size="3"
+                            onClick={() => router.push('/dashboard')}
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </Button>
+                    </Flex>
                 </Flex>
             </form>
         </Card>

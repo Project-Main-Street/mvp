@@ -406,6 +406,22 @@ export interface RevenueRange {
   displayOrder: number;
 }
 
+export interface ProductCategory {
+  id: number;
+  name: string;
+  createdAt: Date;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  categoryId: number | null;
+  categoryName: string | null;
+  businessId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -415,7 +431,7 @@ export interface Business {
   employeeCountRangeLabel: string | null;
   revenueRangeId: number | null;
   revenueRangeLabel: string | null;
-  products: string | null;
+  products: Product[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -431,7 +447,6 @@ export async function getBusiness(businessId: string): Promise<Business | null> 
       ecr.label as "employeeCountRangeLabel",
       b.revenue_range_id as "revenueRangeId",
       rr.label as "revenueRangeLabel",
-      b.products,
       b.created_at as "createdAt",
       b.updated_at as "updatedAt"
     FROM businesses b
@@ -441,7 +456,15 @@ export async function getBusiness(businessId: string): Promise<Business | null> 
     LIMIT 1
   `;
   
-  return result[0] ? (result[0] as Business) : null;
+  if (!result[0]) return null;
+
+  // Fetch products for this business
+  const products = await getProductsByBusinessId(businessId);
+  
+  return {
+    ...result[0],
+    products
+  } as Business;
 }
 
 export async function getBusinessByUserId(userId: string): Promise<Business | null> {
@@ -455,7 +478,6 @@ export async function getBusinessByUserId(userId: string): Promise<Business | nu
       ecr.label as "employeeCountRangeLabel",
       b.revenue_range_id as "revenueRangeId",
       rr.label as "revenueRangeLabel",
-      b.products,
       b.created_at as "createdAt",
       b.updated_at as "updatedAt"
     FROM businesses b
@@ -466,7 +488,15 @@ export async function getBusinessByUserId(userId: string): Promise<Business | nu
     LIMIT 1
   `;
   
-  return result[0] ? (result[0] as Business) : null;
+  if (!result[0]) return null;
+
+  // Fetch products for this business
+  const products = await getProductsByBusinessId(result[0].id);
+  
+  return {
+    ...result[0],
+    products
+  } as Business;
 }
 
 export async function createBusiness(data: {
@@ -475,7 +505,6 @@ export async function createBusiness(data: {
   category?: string;
   employeeCountRangeId?: number;
   revenueRangeId?: number;
-  products?: string;
 }): Promise<{ success: boolean; error?: string; business?: Business }> {
   try {
     // Insert new business
@@ -485,16 +514,14 @@ export async function createBusiness(data: {
         location, 
         category, 
         employee_count_range_id,
-        revenue_range_id,
-        products
+        revenue_range_id
       )
       VALUES (
         ${data.name}, 
         ${data.location || null}, 
         ${data.category || null},
         ${data.employeeCountRangeId || null},
-        ${data.revenueRangeId || null},
-        ${data.products || null}
+        ${data.revenueRangeId || null}
       )
       RETURNING id
     `;
@@ -542,4 +569,133 @@ export async function updateProfileBusinessId(userId: string, businessId: string
     SET business_id = ${businessId}, updated_at = CURRENT_TIMESTAMP
     WHERE user_id = ${userId}
   `;
+}
+
+// Product management
+export async function getProductCategories(): Promise<ProductCategory[]> {
+  const result = await sql`
+    SELECT 
+      id,
+      name,
+      created_at as "createdAt"
+    FROM product_categories
+    ORDER BY name ASC
+  `;
+  return result as unknown as ProductCategory[];
+}
+
+export async function getProductById(productId: number): Promise<Product | null> {
+  const result = await sql`
+    SELECT 
+      p.id,
+      p.name,
+      p.category_id as "categoryId",
+      pc.name as "categoryName",
+      p.business_id as "businessId",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    FROM products p
+    LEFT JOIN product_categories pc ON p.category_id = pc.id
+    WHERE p.id = ${productId}
+  `;
+  return result.length > 0 ? (result[0] as unknown as Product) : null;
+}
+
+export async function getProductsByBusinessId(businessId: string): Promise<Product[]> {
+  const result = await sql`
+    SELECT 
+      p.id,
+      p.name,
+      p.category_id as "categoryId",
+      pc.name as "categoryName",
+      p.business_id as "businessId",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    FROM products p
+    LEFT JOIN product_categories pc ON p.category_id = pc.id
+    WHERE p.business_id = ${businessId}
+    ORDER BY p.created_at DESC
+  `;
+  return result as unknown as Product[];
+}
+
+export async function createProduct(
+  name: string, 
+  categoryId: number | null, 
+  businessId: string
+): Promise<Product> {
+  const result = await sql`
+    INSERT INTO products (name, category_id, business_id)
+    VALUES (${name}, ${categoryId}, ${businessId})
+    RETURNING 
+      id,
+      name,
+      category_id as "categoryId",
+      business_id as "businessId",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+  `;
+  return result[0] as unknown as Product;
+}
+
+export async function deleteProduct(productId: number): Promise<void> {
+  await sql`
+    DELETE FROM products
+    WHERE id = ${productId}
+  `;
+}
+
+export async function updateBusiness(
+  businessId: string,
+  data: {
+    name?: string;
+    location?: string | null;
+    category?: string | null;
+    employeeCountRangeId?: number | null;
+    revenueRangeId?: number | null;
+  }
+): Promise<{ success: boolean; error?: string; business?: Business }> {
+  try {
+    await sql`
+      UPDATE businesses
+      SET
+        name = ${data.name !== undefined ? data.name : sql`name`},
+        location = ${data.location !== undefined ? data.location : sql`location`},
+        category = ${data.category !== undefined ? data.category : sql`category`},
+        employee_count_range_id = ${data.employeeCountRangeId !== undefined ? data.employeeCountRangeId : sql`employee_count_range_id`},
+        revenue_range_id = ${data.revenueRangeId !== undefined ? data.revenueRangeId : sql`revenue_range_id`},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${businessId}
+    `;
+
+    // Fetch the updated business with range labels
+    const business = await getBusiness(businessId);
+    return { success: true, business: business! };
+  } catch (error: any) {
+    console.error('Error updating business:', error);
+    return { success: false, error: 'Failed to update business' };
+  }
+}
+
+export async function updateProduct(
+  productId: number,
+  name: string,
+  categoryId: number | null
+): Promise<Product> {
+  const result = await sql`
+    UPDATE products
+    SET
+      name = ${name},
+      category_id = ${categoryId},
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${productId}
+    RETURNING 
+      id,
+      name,
+      category_id as "categoryId",
+      business_id as "businessId",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+  `;
+  return result[0] as unknown as Product;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/stack/server";
-import { createBusiness, updateProfileBusinessId, getBusinessByUserId, getEmployeeCountRanges, getRevenueRanges } from "@/lib/db";
+import { createBusiness, updateProfileBusinessId, getBusinessByUserId, createProduct, updateBusiness, getProductsByBusinessId, deleteProduct, getProductById } from "@/lib/db";
 
 // POST /api/business - Create a new business
 export async function POST(req: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       category,
       employeeCountRangeId,
       revenueRangeId,
-      products
+      productIds
     } = body;
 
     // Validate required fields
@@ -56,14 +56,25 @@ export async function POST(req: NextRequest) {
       location,
       category,
       employeeCountRangeId,
-      revenueRangeId,
-      products
+      revenueRangeId
     });
 
     if (!result.success || !result.business) {
       return NextResponse.json(
         { error: result.error || "Failed to create business" },
         { status: 500 }
+      );
+    }
+
+    // Create products if provided (copy from reference products)
+    if (productIds && Array.isArray(productIds) && productIds.length > 0) {
+      await Promise.all(
+        productIds.map(async (productId: number) => {
+          const refProduct = await getProductById(productId);
+          if (refProduct) {
+            await createProduct(refProduct.name, refProduct.categoryId || null, result.business!.id);
+          }
+        })
       );
     }
 
@@ -111,6 +122,108 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching business:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/business - Update user's business
+export async function PUT(req: NextRequest) {
+  try {
+    // Authenticate user
+    const user = await stackServerApp.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Get user's business
+    const existingBusiness = await getBusinessByUserId(user.id);
+    if (!existingBusiness) {
+      return NextResponse.json(
+        { error: "Business not found" },
+        { status: 404 }
+      );
+    }
+
+    // Parse request body
+    const body = await req.json();
+    const {
+      name,
+      location,
+      category,
+      employeeCountRangeId,
+      revenueRangeId,
+      productIds
+    } = body;
+
+    // Validate required fields
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Business name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate location (ZIP code) if provided
+    if (location && !/^\d{5}(-\d{4})?$/.test(location)) {
+      return NextResponse.json(
+        { error: "Location must be a valid ZIP code (e.g., 12345 or 12345-6789)" },
+        { status: 400 }
+      );
+    }
+
+    // Update business
+    const result = await updateBusiness(existingBusiness.id, {
+      name: name.trim(),
+      location: location || null,
+      category: category || null,
+      employeeCountRangeId: employeeCountRangeId || null,
+      revenueRangeId: revenueRangeId || null
+    });
+
+    if (!result.success || !result.business) {
+      return NextResponse.json(
+        { error: result.error || "Failed to update business" },
+        { status: 500 }
+      );
+    }
+
+    // Update products - replace all with new selection
+    if (productIds && Array.isArray(productIds)) {
+      // Get existing products
+      const existingProducts = await getProductsByBusinessId(existingBusiness.id);
+      
+      // Delete all existing products
+      await Promise.all(
+        existingProducts.map(product => deleteProduct(product.id))
+      );
+
+      // Create new products from selected reference products
+      await Promise.all(
+        productIds.map(async (productId: number) => {
+          const refProduct = await getProductById(productId);
+          if (refProduct) {
+            await createProduct(refProduct.name, refProduct.categoryId || null, existingBusiness.id);
+          }
+        })
+      );
+    }
+
+    // Fetch updated business with products
+    const updatedBusiness = await getBusinessByUserId(user.id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Business updated successfully",
+      business: updatedBusiness
+    });
+  } catch (error) {
+    console.error("Error updating business:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

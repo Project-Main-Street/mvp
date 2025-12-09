@@ -1,5 +1,5 @@
 import { Box, Container, Heading, Section, Text } from "@radix-ui/themes";
-import CreateBusinessForm from "@/lib/components/CreateBusinessForm";
+import UpsertBusinessForm from "@/lib/components/UpsertBusinessForm";
 
 export default function CreateBusinessPage() {
     return (
@@ -13,7 +13,7 @@ export default function CreateBusinessPage() {
                         Set up your business profile to connect with the Main Street community
                     </Text>
 
-                    <CreateBusinessForm />
+                    <UpsertBusinessForm />
                 </Box>
             </Container>
         </Section>
