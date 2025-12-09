@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     category_id INTEGER REFERENCES product_categories(id) ON DELETE SET NULL,
-    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -11,7 +10,6 @@ CREATE TABLE IF NOT EXISTS products (
 -- Indexes for lookups
 CREATE INDEX IF NOT EXISTS products_name_idx ON products (name);
 CREATE INDEX IF NOT EXISTS products_category_idx ON products (category_id);
-CREATE INDEX IF NOT EXISTS products_business_idx ON products (business_id);
 
 -- Update timestamp trigger
 CREATE OR REPLACE FUNCTION update_products_updated_at()
