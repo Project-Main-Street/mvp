@@ -54,6 +54,36 @@ export async function runMigrations() {
     await sql.unsafe(alterBusinessesSchema);
     console.log('✅ Businesses table schema updated');
     
+    // 5b. Create product categories table (no dependencies)
+    console.log('Creating product categories table...');
+    const productCategoriesSchema = await readFile(join(schemaDir, 'product_categories.sql'), 'utf-8');
+    await sql.unsafe(productCategoriesSchema);
+    console.log('✅ Product categories table created');
+    
+    // 5c. Create products table (depends on product_categories and businesses)
+    console.log('Creating products table...');
+    const productsSchema = await readFile(join(schemaDir, 'products.sql'), 'utf-8');
+    await sql.unsafe(productsSchema);
+    console.log('✅ Products table created');
+    
+    // 5d. Alter businesses table to remove old products TEXT column
+    console.log('Removing old products column from businesses table...');
+    const alterBusinessesProductsSchema = await readFile(join(schemaDir, 'alter_businesses_products.sql'), 'utf-8');
+    await sql.unsafe(alterBusinessesProductsSchema);
+    console.log('✅ Old products column removed');
+    
+    // 5e. Add slug column to products table
+    console.log('Adding slug column to products table...');
+    const addProductSlugSchema = await readFile(join(schemaDir, 'add_product_slug.sql'), 'utf-8');
+    await sql.unsafe(addProductSlugSchema);
+    console.log('✅ Slug column added to products table');
+    
+    // 5f. Create business_products join table
+    console.log('Creating business_products join table...');
+    const businessProductsSchema = await readFile(join(schemaDir, 'business_products.sql'), 'utf-8');
+    await sql.unsafe(businessProductsSchema);
+    console.log('✅ Business_products join table created');
+    
     // 6. Create profiles table (depends on neon_auth.users_sync and businesses)
     console.log('Creating profiles table...');
     const profilesSchema = await readFile(join(schemaDir, 'profiles.sql'), 'utf-8');

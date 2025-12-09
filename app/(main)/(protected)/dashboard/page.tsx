@@ -24,7 +24,7 @@ export default async function DashboardPage() {
                         Your Business
                     </Heading>
                     {business ? (
-                        <BusinessPreviewCard business={business} />
+                        <BusinessPreviewCard business={business} isOwner={true} />
                     ) : (
                         <Card>
                             <Flex direction="column" gap="3" align="center" py="4">
