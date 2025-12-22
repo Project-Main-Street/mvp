@@ -27,16 +27,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return (
         <Box>
             <Box mb="4">
-                <Link href="/dashboard/products" passHref legacyBehavior>
-                    <Button variant="ghost" asChild>
-                        <a>
-                            <Flex align="center" gap="2">
-                                <ArrowLeftIcon />
-                                Back to Products
-                            </Flex>
-                        </a>
-                    </Button>
-                </Link>
+                <Button variant="ghost" asChild>
+                    <Link href="/dashboard/products">
+                        <Flex align="center" gap="2">
+                            <ArrowLeftIcon />
+                            Back to Products
+                        </Flex>
+                    </Link>
+                </Button>
             </Box>
 
             <ProductDetail
