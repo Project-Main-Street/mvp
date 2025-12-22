@@ -1,7 +1,14 @@
 import postgres from 'postgres'
+import { cache } from 'react'
 
-// Database connection singleton
-export const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
+// Database connection singleton with connection pooling optimizations
+export const sql = postgres(process.env.POSTGRES_URL!, { 
+  ssl: 'require',
+  max: 10, // Maximum number of connections in the pool
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout
+  prepare: false, // Disable prepared statements for better compatibility
+})
 
 // Type definitions
 export interface Post {
@@ -24,8 +31,8 @@ export interface Post {
   depth?: number;
 }
 
-// Query functions
-export async function getPosts(): Promise<Post[]> {
+// Query functions with React cache for request deduplication
+export const getPosts = cache(async (): Promise<Post[]> => {
   const posts = await sql`
     SELECT 
       p.id, 
@@ -45,7 +52,7 @@ export async function getPosts(): Promise<Post[]> {
     ORDER BY p."createdAt" DESC
   `;
   return posts as unknown as Post[];
-}
+});
 
 export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
   const posts = await sql`
@@ -535,7 +542,7 @@ export async function createBusiness(data: {
   }
 }
 
-export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
+export const getEmployeeCountRanges = cache(async (): Promise<EmployeeCountRange[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -547,9 +554,9 @@ export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
     ORDER BY display_order ASC
   `;
   return result as unknown as EmployeeCountRange[];
-}
+});
 
-export async function getRevenueRanges(): Promise<RevenueRange[]> {
+export const getRevenueRanges = cache(async (): Promise<RevenueRange[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -561,7 +568,7 @@ export async function getRevenueRanges(): Promise<RevenueRange[]> {
     ORDER BY display_order ASC
   `;
   return result as unknown as RevenueRange[];
-}
+});
 
 export async function updateProfileBusinessId(userId: string, businessId: string): Promise<void> {
   await sql`
@@ -572,7 +579,7 @@ export async function updateProfileBusinessId(userId: string, businessId: string
 }
 
 // Product management
-export async function getProductCategories(): Promise<ProductCategory[]> {
+export const getProductCategories = cache(async (): Promise<ProductCategory[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -582,9 +589,9 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
     ORDER BY name ASC
   `;
   return result as unknown as ProductCategory[];
-}
+});
 
-export async function getAllProducts(): Promise<Product[]> {
+export const getAllProducts = cache(async (): Promise<Product[]> => {
   const result = await sql`
     SELECT 
       p.id,
@@ -599,7 +606,7 @@ export async function getAllProducts(): Promise<Product[]> {
     ORDER BY pc.name, p.name
   `;
   return result as unknown as Product[];
-}
+});
 
 export async function getAllBusinesses(): Promise<Business[]> {
   const result = await sql`
