@@ -6,6 +6,7 @@ import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { Inter } from 'next/font/google'
 import { Theme } from "@radix-ui/themes";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 
 export const metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
           <StackTheme>
             <Theme>
               {children}
+              <SpeedInsights />
             </Theme>
           </StackTheme>
         </StackProvider>
