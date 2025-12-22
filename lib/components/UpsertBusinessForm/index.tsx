@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, TextField, Text, Box, Card, Flex, Select } from '@radix-ui/themes';
+import { Button, TextField, Text, Box, Card, Flex, Select, Heading } from '@radix-ui/themes';
 import { Business } from '@/lib/db';
 
 interface EmployeeCountRange {
@@ -153,191 +153,196 @@ export default function UpsertBusinessForm({ business }: UpsertBusinessFormProps
 
     return (
         <Card>
-            <form onSubmit={handleSubmit}>
-                <Flex direction="column" gap="4">
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Business Name *
-                        </Text>
-                        <TextField.Root
-                            value={formData.name}
-                            onChange={(e) => handleChange('name', e.target.value)}
-                            placeholder="Enter your business name"
-                            disabled={isLoading}
-                            required
-                        />
-                    </Box>
+            <Box p="4">
+                <Heading as="h3" size="4" mb="4">
+                    Business Settings
+                </Heading>
+                <form onSubmit={handleSubmit}>
+                    <Flex direction="column" gap="4">
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Business Name *
+                            </Text>
+                            <TextField.Root
+                                value={formData.name}
+                                onChange={(e) => handleChange('name', e.target.value)}
+                                placeholder="Enter your business name"
+                                disabled={isLoading}
+                                required
+                            />
+                        </Box>
 
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Location (ZIP Code)
-                        </Text>
-                        <TextField.Root
-                            value={formData.location}
-                            onChange={(e) => handleChange('location', e.target.value)}
-                            placeholder="e.g., 12345 or 12345-6789"
-                            disabled={isLoading}
-                        />
-                        <Text size="1" color="gray" mt="1">
-                            Optional. Provide a 5-digit ZIP code or ZIP+4 format
-                        </Text>
-                    </Box>
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Location (ZIP Code)
+                            </Text>
+                            <TextField.Root
+                                value={formData.location}
+                                onChange={(e) => handleChange('location', e.target.value)}
+                                placeholder="e.g., 12345 or 12345-6789"
+                                disabled={isLoading}
+                            />
+                            <Text size="1" color="gray" mt="1">
+                                Optional. Provide a 5-digit ZIP code or ZIP+4 format
+                            </Text>
+                        </Box>
 
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Category
-                        </Text>
-                        <TextField.Root
-                            value={formData.category}
-                            onChange={(e) => handleChange('category', e.target.value)}
-                            placeholder="e.g., Retail, Technology, Healthcare"
-                            disabled={isLoading}
-                        />
-                        <Text size="1" color="gray" mt="1">
-                            Optional. Business industry or category
-                        </Text>
-                    </Box>
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Category
+                            </Text>
+                            <TextField.Root
+                                value={formData.category}
+                                onChange={(e) => handleChange('category', e.target.value)}
+                                placeholder="e.g., Retail, Technology, Healthcare"
+                                disabled={isLoading}
+                            />
+                            <Text size="1" color="gray" mt="1">
+                                Optional. Business industry or category
+                            </Text>
+                        </Box>
 
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Number of Employees
-                        </Text>
-                        <Select.Root
-                            value={formData.employeeCountRangeId}
-                            onValueChange={(value) => handleChange('employeeCountRangeId', value)}
-                            disabled={isLoading}
-                        >
-                            <Select.Trigger placeholder="Select employee count range" style={{ width: '100%' }} />
-                            <Select.Content>
-                                {employeeCountRanges.map((range) => (
-                                    <Select.Item key={range.id} value={range.id.toString()}>
-                                        {range.label}
-                                    </Select.Item>
-                                ))}
-                            </Select.Content>
-                        </Select.Root>
-                        <Text size="1" color="gray" mt="1">
-                            Optional. Select the range that matches your employee count
-                        </Text>
-                    </Box>
-
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Annual Revenue
-                        </Text>
-                        <Select.Root
-                            value={formData.revenueRangeId}
-                            onValueChange={(value) => handleChange('revenueRangeId', value)}
-                            disabled={isLoading}
-                        >
-                            <Select.Trigger placeholder="Select revenue range" style={{ width: '100%' }} />
-                            <Select.Content>
-                                {revenueRanges.map((range) => (
-                                    <Select.Item key={range.id} value={range.id.toString()}>
-                                        {range.label}
-                                    </Select.Item>
-                                ))}
-                            </Select.Content>
-                        </Select.Root>
-                        <Text size="1" color="gray" mt="1">
-                            Optional. Select the range that matches your annual revenue
-                        </Text>
-                    </Box>
-
-                    <Box>
-                        <Text as="label" size="2" weight="bold" mb="2">
-                            Products/Services
-                        </Text>
-                        <Select.Root
-                            value=""
-                            onValueChange={(value) => toggleProduct(parseInt(value))}
-                            disabled={isLoading}
-                        >
-                            <Select.Trigger placeholder="Select products your business uses" style={{ width: '100%' }} />
-                            <Select.Content>
-                                {Object.entries(productsByCategory).map(([category, products]) => (
-                                    <Select.Group key={category}>
-                                        <Select.Label>{category}</Select.Label>
-                                        {products.map((product) => (
-                                            <Select.Item
-                                                key={product.id}
-                                                value={product.id.toString()}
-                                                disabled={selectedProductIds.has(product.id)}
-                                            >
-                                                {product.name} {selectedProductIds.has(product.id) ? '✓' : ''}
-                                            </Select.Item>
-                                        ))}
-                                    </Select.Group>
-                                ))}
-                            </Select.Content>
-                        </Select.Root>
-                        <Text size="1" color="gray" mt="1">
-                            Optional. Select the products or services your business uses
-                        </Text>
-
-                        {selectedProductIds.size > 0 && (
-                            <Box mt="3">
-                                <Text size="2" weight="bold" mb="2">
-                                    Selected Products ({selectedProductIds.size}):
-                                </Text>
-                                <Flex gap="2" wrap="wrap">
-                                    {availableProducts
-                                        .filter(p => selectedProductIds.has(p.id))
-                                        .map(product => (
-                                            <Card key={product.id} variant="surface" size="1">
-                                                <Flex align="center" gap="2">
-                                                    <Text size="2">{product.name}</Text>
-                                                    <Button
-                                                        type="button"
-                                                        size="1"
-                                                        variant="ghost"
-                                                        color="red"
-                                                        onClick={() => toggleProduct(product.id)}
-                                                        disabled={isLoading}
-                                                    >
-                                                        ×
-                                                    </Button>
-                                                </Flex>
-                                            </Card>
-                                        ))}
-                                </Flex>
-                            </Box>
-                        )}
-                    </Box>
-
-                    {error && (
-                        <Text color="red" size="2">
-                            {error}
-                        </Text>
-                    )}
-
-                    <Flex gap="3">
-                        <Button
-                            type="submit"
-                            disabled={isLoading || !formData.name.trim()}
-                            size="3"
-                            style={{ flex: 1 }}
-                        >
-                            {isLoading
-                                ? (isEditing ? 'Updating...' : 'Creating...')
-                                : (isEditing ? 'Update Business' : 'Create Business')
-                            }
-                        </Button>
-                        {isEditing && (
-                            <Button
-                                type="button"
-                                variant="soft"
-                                color="gray"
-                                size="3"
-                                onClick={() => router.push('/dashboard')}
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Number of Employees
+                            </Text>
+                            <Select.Root
+                                value={formData.employeeCountRangeId}
+                                onValueChange={(value) => handleChange('employeeCountRangeId', value)}
                                 disabled={isLoading}
                             >
-                                Cancel
-                            </Button>
+                                <Select.Trigger placeholder="Select employee count range" style={{ width: '100%' }} />
+                                <Select.Content>
+                                    {employeeCountRanges.map((range) => (
+                                        <Select.Item key={range.id} value={range.id.toString()}>
+                                            {range.label}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Root>
+                            <Text size="1" color="gray" mt="1">
+                                Optional. Select the range that matches your employee count
+                            </Text>
+                        </Box>
+
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Annual Revenue
+                            </Text>
+                            <Select.Root
+                                value={formData.revenueRangeId}
+                                onValueChange={(value) => handleChange('revenueRangeId', value)}
+                                disabled={isLoading}
+                            >
+                                <Select.Trigger placeholder="Select revenue range" style={{ width: '100%' }} />
+                                <Select.Content>
+                                    {revenueRanges.map((range) => (
+                                        <Select.Item key={range.id} value={range.id.toString()}>
+                                            {range.label}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Root>
+                            <Text size="1" color="gray" mt="1">
+                                Optional. Select the range that matches your annual revenue
+                            </Text>
+                        </Box>
+
+                        <Box>
+                            <Text as="label" size="2" weight="bold" mb="2">
+                                Products/Services
+                            </Text>
+                            <Select.Root
+                                value=""
+                                onValueChange={(value) => toggleProduct(parseInt(value))}
+                                disabled={isLoading}
+                            >
+                                <Select.Trigger placeholder="Select products your business uses" style={{ width: '100%' }} />
+                                <Select.Content>
+                                    {Object.entries(productsByCategory).map(([category, products]) => (
+                                        <Select.Group key={category}>
+                                            <Select.Label>{category}</Select.Label>
+                                            {products.map((product) => (
+                                                <Select.Item
+                                                    key={product.id}
+                                                    value={product.id.toString()}
+                                                    disabled={selectedProductIds.has(product.id)}
+                                                >
+                                                    {product.name} {selectedProductIds.has(product.id) ? '✓' : ''}
+                                                </Select.Item>
+                                            ))}
+                                        </Select.Group>
+                                    ))}
+                                </Select.Content>
+                            </Select.Root>
+                            <Text size="1" color="gray" mt="1">
+                                Optional. Select the products or services your business uses
+                            </Text>
+
+                            {selectedProductIds.size > 0 && (
+                                <Box mt="3">
+                                    <Text size="2" weight="bold" mb="2">
+                                        Selected Products ({selectedProductIds.size}):
+                                    </Text>
+                                    <Flex gap="2" wrap="wrap">
+                                        {availableProducts
+                                            .filter(p => selectedProductIds.has(p.id))
+                                            .map(product => (
+                                                <Card key={product.id} variant="surface" size="1">
+                                                    <Flex align="center" gap="2">
+                                                        <Text size="2">{product.name}</Text>
+                                                        <Button
+                                                            type="button"
+                                                            size="1"
+                                                            variant="ghost"
+                                                            color="red"
+                                                            onClick={() => toggleProduct(product.id)}
+                                                            disabled={isLoading}
+                                                        >
+                                                            ×
+                                                        </Button>
+                                                    </Flex>
+                                                </Card>
+                                            ))}
+                                    </Flex>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {error && (
+                            <Text color="red" size="2">
+                                {error}
+                            </Text>
                         )}
+
+                        <Flex gap="3">
+                            <Button
+                                type="submit"
+                                disabled={isLoading || !formData.name.trim()}
+                                size="3"
+                                style={{ flex: 1 }}
+                            >
+                                {isLoading
+                                    ? (isEditing ? 'Updating...' : 'Creating...')
+                                    : (isEditing ? 'Update Business' : 'Create Business')
+                                }
+                            </Button>
+                            {isEditing && (
+                                <Button
+                                    type="button"
+                                    variant="soft"
+                                    color="gray"
+                                    size="3"
+                                    onClick={() => router.push('/dashboard')}
+                                    disabled={isLoading}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                        </Flex>
                     </Flex>
-                </Flex>
-            </form>
+                </form>
+            </Box>
         </Card>
     );
 }

@@ -15,8 +15,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     const tabs = [
         { href: '/dashboard/posts', label: 'Posts', icon: FileTextIcon },
-        { href: '/dashboard/businesses', label: 'Businesses', icon: HomeIcon },
-        { href: '/dashboard/products', label: 'Products', icon: ArchiveIcon },
     ];
 
     const isActive = (href: string) => {
