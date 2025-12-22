@@ -54,6 +54,63 @@ export const getPosts = cache(async (): Promise<Post[]> => {
   return posts as unknown as Post[];
 });
 
+export const searchPosts = cache(async (query: string, userId?: string): Promise<Post[]> => {
+  // If no query, return empty array (let the component use getPosts instead)
+  if (!query.trim()) {
+    return [];
+  }
+
+  // Use ILIKE for simple pattern matching (works without full-text search index)
+  const searchPattern = `%${query}%`;
+  
+  if (userId) {
+    const posts = await sql`
+      SELECT 
+        p.id, 
+        p.author, 
+        u.name as "authorName",
+        pr.username as "authorUsername",
+        p.title, 
+        p.content, 
+        p."createdAt", 
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
+      WHERE p.author = ${userId}
+        AND p.parent IS NULL
+        AND (p.title ILIKE ${searchPattern} OR p.content ILIKE ${searchPattern})
+      ORDER BY p."createdAt" DESC
+      LIMIT 50
+    `;
+    return posts as unknown as Post[];
+  } else {
+    const posts = await sql`
+      SELECT 
+        p.id, 
+        p.author, 
+        u.name as "authorName",
+        pr.username as "authorUsername",
+        p.title, 
+        p.content, 
+        p."createdAt", 
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
+      WHERE p.parent IS NULL
+        AND (p.title ILIKE ${searchPattern} OR p.content ILIKE ${searchPattern})
+      ORDER BY p."createdAt" DESC
+      LIMIT 50
+    `;
+    return posts as unknown as Post[];
+  }
+});
+
 export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
   const posts = await sql`
     SELECT 
