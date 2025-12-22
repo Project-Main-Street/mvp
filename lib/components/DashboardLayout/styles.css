@@ -1,0 +1,7 @@
+.dashboard-nav-item:hover {
+    background-color: var(--gray-3) !important;
+}
+
+.dashboard-nav-item:has(+ *):hover {
+    background-color: var(--gray-3);
+}

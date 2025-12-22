@@ -80,12 +80,12 @@ export default function CustomAccountSettings() {
     };
 
     return (
-        <Box p="6" style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <Heading as="h1" size="6" mb="6">
-                Account Settings
-            </Heading>
+        <Card>
+            <Box p="4">
+                <Heading as="h3" size="4" mb="4">
+                    Profile Settings
+                </Heading>
 
-            <Card>
                 <form onSubmit={handleSubmit}>
                     <Flex direction="column" gap="4">
                         <Box>
@@ -155,7 +155,7 @@ export default function CustomAccountSettings() {
                         </Button>
                     </Flex>
                 </form>
-            </Card>
-        </Box>
+            </Box>
+        </Card>
     );
 }

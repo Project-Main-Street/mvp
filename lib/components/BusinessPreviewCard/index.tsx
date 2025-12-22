@@ -58,7 +58,7 @@ export default function BusinessPreviewCard({ business, isOwner = false }: Busin
                                     {business.products.map((product) => (
                                         <Link
                                             key={product.id}
-                                            href={`/product/${product.slug}`}
+                                            href={`/dashboard/products/${product.slug}`}
                                             style={{ textDecoration: 'none' }}
                                         >
                                             <Badge

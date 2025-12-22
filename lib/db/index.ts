@@ -1,7 +1,14 @@
 import postgres from 'postgres'
+import { cache } from 'react'
 
-// Database connection singleton
-export const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
+// Database connection singleton with connection pooling optimizations
+export const sql = postgres(process.env.POSTGRES_URL!, { 
+  ssl: 'require',
+  max: 10, // Maximum number of connections in the pool
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout
+  prepare: false, // Disable prepared statements for better compatibility
+})
 
 // Type definitions
 export interface Post {
@@ -24,8 +31,8 @@ export interface Post {
   depth?: number;
 }
 
-// Query functions
-export async function getPosts(): Promise<Post[]> {
+// Query functions with React cache for request deduplication
+export const getPosts = cache(async (): Promise<Post[]> => {
   const posts = await sql`
     SELECT 
       p.id, 
@@ -45,7 +52,64 @@ export async function getPosts(): Promise<Post[]> {
     ORDER BY p."createdAt" DESC
   `;
   return posts as unknown as Post[];
-}
+});
+
+export const searchPosts = cache(async (query: string, userId?: string): Promise<Post[]> => {
+  // If no query, return empty array (let the component use getPosts instead)
+  if (!query.trim()) {
+    return [];
+  }
+
+  // Use ILIKE for simple pattern matching (works without full-text search index)
+  const searchPattern = `%${query}%`;
+  
+  if (userId) {
+    const posts = await sql`
+      SELECT 
+        p.id, 
+        p.author, 
+        u.name as "authorName",
+        pr.username as "authorUsername",
+        p.title, 
+        p.content, 
+        p."createdAt", 
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
+      WHERE p.author = ${userId}
+        AND p.parent IS NULL
+        AND (p.title ILIKE ${searchPattern} OR p.content ILIKE ${searchPattern})
+      ORDER BY p."createdAt" DESC
+      LIMIT 50
+    `;
+    return posts as unknown as Post[];
+  } else {
+    const posts = await sql`
+      SELECT 
+        p.id, 
+        p.author, 
+        u.name as "authorName",
+        pr.username as "authorUsername",
+        p.title, 
+        p.content, 
+        p."createdAt", 
+        p."updatedAt",
+        COALESCE((SELECT SUM(valence) FROM votes WHERE post = p.id), 0)::int as "voteScore",
+        COALESCE((SELECT COUNT(*) FROM posts WHERE parent = p.id), 0)::int as "commentCount"
+      FROM posts p
+      LEFT JOIN neon_auth.users_sync u ON p.author = u.id
+      LEFT JOIN profiles pr ON p.author = pr.user_id
+      WHERE p.parent IS NULL
+        AND (p.title ILIKE ${searchPattern} OR p.content ILIKE ${searchPattern})
+      ORDER BY p."createdAt" DESC
+      LIMIT 50
+    `;
+    return posts as unknown as Post[];
+  }
+});
 
 export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
   const posts = await sql`
@@ -535,7 +599,7 @@ export async function createBusiness(data: {
   }
 }
 
-export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
+export const getEmployeeCountRanges = cache(async (): Promise<EmployeeCountRange[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -547,9 +611,9 @@ export async function getEmployeeCountRanges(): Promise<EmployeeCountRange[]> {
     ORDER BY display_order ASC
   `;
   return result as unknown as EmployeeCountRange[];
-}
+});
 
-export async function getRevenueRanges(): Promise<RevenueRange[]> {
+export const getRevenueRanges = cache(async (): Promise<RevenueRange[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -561,7 +625,7 @@ export async function getRevenueRanges(): Promise<RevenueRange[]> {
     ORDER BY display_order ASC
   `;
   return result as unknown as RevenueRange[];
-}
+});
 
 export async function updateProfileBusinessId(userId: string, businessId: string): Promise<void> {
   await sql`
@@ -572,7 +636,7 @@ export async function updateProfileBusinessId(userId: string, businessId: string
 }
 
 // Product management
-export async function getProductCategories(): Promise<ProductCategory[]> {
+export const getProductCategories = cache(async (): Promise<ProductCategory[]> => {
   const result = await sql`
     SELECT 
       id,
@@ -582,6 +646,53 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
     ORDER BY name ASC
   `;
   return result as unknown as ProductCategory[];
+});
+
+export const getAllProducts = cache(async (): Promise<Product[]> => {
+  const result = await sql`
+    SELECT 
+      p.id,
+      p.name,
+      p.slug,
+      p.category_id as "categoryId",
+      pc.name as "categoryName",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    FROM products p
+    LEFT JOIN product_categories pc ON p.category_id = pc.id
+    ORDER BY pc.name, p.name
+  `;
+  return result as unknown as Product[];
+});
+
+export async function getAllBusinesses(): Promise<Business[]> {
+  const result = await sql`
+    SELECT 
+      b.id,
+      b.name,
+      b.location,
+      b.category,
+      b.employee_count_range_id as "employeeCountRangeId",
+      ecr.label as "employeeCountRangeLabel",
+      b.revenue_range_id as "revenueRangeId",
+      rr.label as "revenueRangeLabel",
+      b.created_at as "createdAt",
+      b.updated_at as "updatedAt"
+    FROM businesses b
+    LEFT JOIN employee_count_ranges ecr ON b.employee_count_range_id = ecr.id
+    LEFT JOIN revenue_ranges rr ON b.revenue_range_id = rr.id
+    ORDER BY b.created_at DESC
+  `;
+
+  // Fetch products for each business
+  const businesses = result as unknown as Business[];
+  await Promise.all(
+    businesses.map(async (business) => {
+      business.products = await getProductsByBusinessId(business.id);
+    })
+  );
+
+  return businesses;
 }
 
 export async function getProductById(productId: number): Promise<Product | null> {
