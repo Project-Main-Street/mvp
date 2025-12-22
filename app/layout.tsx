@@ -7,6 +7,7 @@ import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { Inter } from 'next/font/google'
 import { Theme } from "@radix-ui/themes";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import ViewTransitions from "@/lib/components/ViewTransitions";
 
 
@@ -36,6 +37,7 @@ export default function RootLayout({
             <Theme>
               <ViewTransitions />
               {children}
+              <SpeedInsights />
             </Theme>
           </StackTheme>
         </StackProvider>
