@@ -8,10 +8,7 @@ export async function PATCH(req: NextRequest) {
     // Authenticate user
     const user = await stackServerApp.getUser();
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse request body
@@ -19,10 +16,10 @@ export async function PATCH(req: NextRequest) {
     const { displayName } = body;
 
     // Validate displayName
-    if (!displayName || typeof displayName !== 'string') {
+    if (!displayName || typeof displayName !== "string") {
       return NextResponse.json(
         { error: "Display name is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,18 +27,18 @@ export async function PATCH(req: NextRequest) {
     const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
     if (!usernameRegex.test(displayName)) {
       return NextResponse.json(
-        { error: "Username must be 3-20 characters and contain only letters, numbers, underscores, and hyphens" },
-        { status: 400 }
+        {
+          error:
+            "Username must be 3-20 characters and contain only letters, numbers, underscores, and hyphens",
+        },
+        { status: 400 },
       );
     }
 
     // Get user's current profile
     const profile = await getProfile(user.id);
     if (!profile) {
-      return NextResponse.json(
-        { error: "Profile not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Check if username is the same as current
@@ -49,16 +46,16 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Username unchanged",
-        username: displayName
+        username: displayName,
       });
     }
 
-    // Check if new username is available
-    const isAvailable = await checkUsernameAvailable(displayName);
+    // Check if new username is available (excluding current user)
+    const isAvailable = await checkUsernameAvailable(displayName, user.id);
     if (!isAvailable) {
       return NextResponse.json(
         { error: "Username already taken" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -77,13 +74,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Username updated successfully",
-      username: displayName
+      username: displayName,
     });
   } catch (error) {
     console.error("Error updating username:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
